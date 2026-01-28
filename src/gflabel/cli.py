@@ -28,6 +28,7 @@ from build123d import (
     Location,
     Locations,
     Mode,
+    Mesher,
     Part,
     Plane,
     RectangleRounded,
@@ -47,9 +48,11 @@ from .bases.modern import ModernBase
 from .bases.none import NoneBase
 from .bases.plain import PlainBase
 from .bases.pred import PredBase, PredBoxBase
-from .bases.tailor import TailorBoxBase
+
+# from .bases.tailor import TailorBoxBase
 from .label import render_collection_of_labels, clean_up_name
 from .options import LabelStyle, RenderOptions
+from .three_mf import apply_3mf_face_colors
 from .util import IndentingRichHandler, unit_registry
 
 logger = logging.getLogger(__name__)
@@ -155,7 +158,7 @@ def base_name_to_subclass(name: str) -> type[LabelBase]:
         "modern": ModernBase,
         "pred": PredBase,
         "predbox": PredBoxBase,
-        "tailorbox": TailorBoxBase,
+        # "tailorbox": TailorBoxBase,
         "plain": PlainBase,
         "none": NoneBase,
         None: NoneBase,
@@ -188,9 +191,12 @@ def colored_parts(comp: Compound) -> list(Part):
                 part_list.append(clone_part)
     return part_list
 
+
 def run(argv: list[str] | None = None):
     # Handle the old way of specifying base
-    if any((x.startswith("--base") and x != "--base-color") for x in (argv or sys.argv)):
+    if any(
+        (x.startswith("--base") and x != "--base-color") for x in (argv or sys.argv)
+    ):
         sys.exit(
             "Error: --base is no longer the way to specify base geometry. Please pass in as a direct argument (gflabel <BASE>)"
         )
@@ -432,7 +438,9 @@ def run(argv: list[str] | None = None):
     body: LabelBase | None = None
     body = base_type(args)
     if args.xscale != 1.0 or args.yscale != 1.0 or args.zscale != 1.0:
-        logger.info(f"Scaling overall label by ({args.xscale}, {args.yscale}, {args.zscale})")
+        logger.info(
+            f"Scaling overall label by ({args.xscale}, {args.yscale}, {args.zscale})"
+        )
         if args.width:
             args.width *= args.xscale
         if args.margin:
@@ -469,7 +477,7 @@ def run(argv: list[str] | None = None):
         if body.part:
             y_offset_each_label = body.part.bounding_box().size.Y + args.label_gap
             label_area = body.area
-            
+
         else:
             # Only occurs if label type has no body e.g. "None"
             if args.height is None:
@@ -480,14 +488,16 @@ def run(argv: list[str] | None = None):
                 X=args.width.to("mm").magnitude, Y=args.height.to("mm").magnitude
             )
 
-        labels_compound = render_collection_of_labels(args.labels, args.divisions, y_offset_each_label, options, label_area)
+        labels_compound = render_collection_of_labels(
+            args.labels, args.divisions, y_offset_each_label, options, label_area
+        )
 
         y = 0
         body_locations = []
         for boddex in range(len(labels_compound.children)):
             body_locations.append((0, y))
             y -= y_offset_each_label
-            
+
         if not is_2d:
             # Create all of the bases
             if body.part:
@@ -514,7 +524,9 @@ def run(argv: list[str] | None = None):
             assembly = Compound(children=[base_part])
         else:
             if args.style == LabelStyle.EMBEDDED and args.embedded_lift != 0:
-                labels_compound.locate(Location(position=Vector(0, 0, args.embedded_lift)))
+                labels_compound.locate(
+                    Location(position=Vector(0, 0, args.embedded_lift))
+                )
             assembly = Compound(children=[base_part, labels_compound])
         base_part.label = clean_up_name("Base")
         base_part.color = Color(args.base_color)
@@ -533,10 +545,14 @@ def run(argv: list[str] | None = None):
             exporter = ExportSVG(scale=100 / max_dimension)
 
             if args.box and is_2d:
-                exporter.add_layer("Box", line_color=Color(args.base_color), line_weight=1)
+                exporter.add_layer(
+                    "Box", line_color=Color(args.base_color), line_weight=1
+                )
                 exporter.add_shape(body_box_sketch, layer="Box")
             if args.svg_mono:
-                exporter.add_layer("Shapes", fill_color=Color(args.label_color), line_weight=0)
+                exporter.add_layer(
+                    "Shapes", fill_color=Color(args.label_color), line_weight=0
+                )
                 compound_in_plane = labels_compound.intersect(Plane.XY)
                 exporter.add_shape(compound_in_plane, layer="Shapes")
             else:
@@ -545,12 +561,24 @@ def run(argv: list[str] | None = None):
                     color = part.color
                     color_str = str(color)
                     if not color_str in layer_dict:
-                        exporter.add_layer(name=color_str, fill_color=color, line_weight=0)
+                        exporter.add_layer(
+                            name=color_str, fill_color=color, line_weight=0
+                        )
                         layer_dict[color_str] = True
                     part_in_plane = part.intersect(Plane.XY)
                     exporter.add_shape(part_in_plane, layer=color_str)
             logger.info(f"Writing SVG {output}")
             exporter.write(output)
+        elif output.endswith(".3mf"):
+            logger.info(f"Writing 3MF {output}")
+            exporter = Mesher()
+            parts = colored_parts(assembly)
+            for part in parts:
+                if part.color is not None and not isinstance(part.color, Color):
+                    part.color = Color(part.color)
+            exporter.add_shape(parts)
+            exporter.write(output)
+            apply_3mf_face_colors(output, parts)
         else:
             logger.error(f"Error: Do not understand output format '{args.output}'")
 
@@ -586,6 +614,7 @@ def run(argv: list[str] | None = None):
                             show_parts.append(bottom)
                             show_cols.append(args.label_color)
                     show(*show_parts, colors=show_cols)
+
 
 if __name__ == "__main__":
     run()
