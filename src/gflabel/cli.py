@@ -595,10 +595,12 @@ def run(argv: list[str] | None = None):
             logger.info(f"Writing 3MF {output}")
             exporter = Mesher()
             parts = colored_parts(assembly)
+
             for part in parts:
                 if part.color is not None and not isinstance(part.color, Color):
                     part.color = Color(part.color)
-            exporter.add_shape(parts)
+                exporter.add_shape(part, part_number=part.label)
+
             exporter.write(output)
             apply_3mf_face_colors(output, parts)
         else:

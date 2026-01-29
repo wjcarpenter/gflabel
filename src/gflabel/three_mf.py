@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from build123d import Color, Part
+import lib3mf
 
 
 def _color_to_hex(color: Color | str | None) -> str:
@@ -23,7 +24,9 @@ def _color_to_hex(color: Color | str | None) -> str:
                 if cleaned.startswith("Color(") and cleaned.endswith(")"):
                     cleaned = cleaned[len("Color(") : -1]
                 parts = cleaned.replace(" ", "").split(",")
-                vals = {p.split("=")[0]: float(p.split("=")[1]) for p in parts if "=" in p}
+                vals = {
+                    p.split("=")[0]: float(p.split("=")[1]) for p in parts if "=" in p
+                }
                 rgb = (vals.get("r"), vals.get("g"), vals.get("b"))
             except Exception:
                 rgb = (0.5, 0.5, 0.5)
@@ -41,8 +44,6 @@ def _color_to_hex(color: Color | str | None) -> str:
 
 
 def apply_3mf_face_colors(path: str, parts: list[Part]) -> None:
-    import lib3mf  # type: ignore
-
     wrapper = lib3mf.Wrapper()
     model = wrapper.CreateModel()
     reader = model.QueryReader("3mf")
@@ -68,12 +69,14 @@ def apply_3mf_face_colors(path: str, parts: list[Part]) -> None:
 
     color_index: dict[str, int] = {}
 
-    if len(mesh_objects) != len(parts):
-        raise RuntimeError(
-            f"3MF mesh object count ({len(mesh_objects)}) differs from parts ({len(parts)})"
-        )
+    def _find_part_by_label(label: str) -> Part:
+        for part in parts:
+            if part.label == label:
+                return part
+        raise RuntimeError(f"No part found with label '{label}'")
 
-    for mesh, part in zip(mesh_objects, parts):
+    for mesh in mesh_objects:
+        part = _find_part_by_label(mesh.GetPartNumber())
         hex_color = _color_to_hex(part.color)
         if hex_color not in color_index:
             color_index[hex_color] = _add_color(hex_color)
