@@ -49,7 +49,7 @@ from .bases.plain import PlainBase
 from .bases.pred import PredBase, PredBoxBase
 from .bases.tailor import TailorBoxBase
 from .label import render_collection_of_labels, clean_up_name
-from .options import LabelStyle, RenderOptions
+from .options import LabelStyle, RenderOptions, SvgMono
 from .util import IndentingRichHandler, unit_registry
 
 logger = logging.getLogger(__name__)
@@ -314,9 +314,10 @@ def run(argv: list[str] | None = None):
     )
     parser.add_argument(
         "--svg-mono",
-        help="SVG files are normally produced with the same colors as the label contents. If you specify this argument, they are produced with label contents in the default label color.",
-        action="store_true",
-        default=False,
+        help="SVG imports and exports preserve coloring. You can suppress that (treating SVGs as monochome) with this argument for import, export, or both. Default: %(default)s",
+        choices=SvgMono,
+        default=SvgMono.NONE,
+        type=SvgMono,
     )
     parser.add_argument(
         "--text-as-parts",
@@ -535,7 +536,7 @@ def run(argv: list[str] | None = None):
             if args.box and is_2d:
                 exporter.add_layer("Box", line_color=Color(args.base_color), line_weight=1)
                 exporter.add_shape(body_box_sketch, layer="Box")
-            if args.svg_mono:
+            if args.svg_mono in [SvgMono.EXPORT, SvgMono.BOTH]:
                 exporter.add_layer("Shapes", fill_color=Color(args.label_color), line_weight=0)
                 compound_in_plane = labels_compound.intersect(Plane.XY)
                 exporter.add_shape(compound_in_plane, layer="Shapes")

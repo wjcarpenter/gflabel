@@ -29,6 +29,22 @@ class LabelStyle(Enum):
         return self.name.lower()
 
 
+class SvgMono(Enum):
+    NONE = auto()
+    IMPORT = auto()
+    EXPORT = auto()
+    BOTH = auto()
+
+    @classmethod
+    def _missing_(cls, value):
+        for kind in cls:
+            if kind.name.lower() == value.lower():
+                return kind
+
+    def __str__(self):
+        return self.name.lower()
+
+
 class FontOptions(NamedTuple):
     font: str | None = None
     font_style: FontStyle = FontStyle.REGULAR
