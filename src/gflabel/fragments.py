@@ -22,7 +22,9 @@ from build123d import (
     CenterArc,
     Circle,
     Color,
+    Compound,
     EllipticalCenterArc,
+    Face,
     GridLocations,
     Line,
     Location,
@@ -48,7 +50,7 @@ from build123d import (
     offset,
 )
 
-from .options import RenderOptions
+from .options import RenderOptions, FragmentDataItem
 from .util import format_table
 
 logger = logging.getLogger(__name__)
@@ -130,7 +132,7 @@ def fragment(*names: str, examples: list[str] = [], overheight: float | None = N
             # class FnWrapper(Fragment):
             #     def render(
             #         self, height: float, maxsize: float, options: Any
-            #     ) -> Sketch:
+            #     ) -> Compound:
             #         return orig_fn(height, maxsize)
             def fragment(*args):
                 frag = FunctionalFragment(fn, *args)
@@ -187,7 +189,7 @@ class Fragment(metaclass=ABCMeta):
         return 0
 
     @abstractmethod
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         pass
 
 
@@ -198,7 +200,7 @@ class FunctionalFragment(Fragment):
         self.args = args
         self.fn = fn
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         return self.fn(height, maxsize, *self.args)
 
 
@@ -211,7 +213,7 @@ class SpacerFragment(Fragment):
         super().__init__(*args)
         self.distance = distance
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         with BuildSketch() as sketch:
             Rectangle(self.distance, height)
         return sketch.sketch
@@ -232,7 +234,7 @@ class ExpandingFragment(Fragment):
 
     examples = ["L{...}R"]
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         with BuildSketch() as sketch:
             Rectangle(maxsize, height)
         return sketch.sketch
@@ -245,14 +247,42 @@ class TextFragment(Fragment):
     def __init__(self, text: str):
         self.text = text
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         if not height:
             raise ValueError("Trying to render zero-height text fragment")
         with BuildSketch() as sketch:
             with options.font.font_options() as f:
                 print(f"Using {f}")
                 Text(self.text, font_size=options.font.get_allowed_height(height), **f)
-        return sketch.sketch
+        frag_sketch = sketch.sketch
+        if not options.text_as_parts:
+            return frag_sketch
+        else:
+            faces = frag_sketch.get_type(Face)
+            # build123d text rendering seems to order the faces with the
+            # final character first, and then the other characters in order.
+            # I don't know if that always holds true, but rearranging things
+            # on the assumption that it is. Best effort!
+            if len(faces):
+                the_first_shall_be_last = faces.pop(0)
+                faces.append(the_first_shall_be_last)
+            face_sketches = []
+            for face in faces:
+                # Hoping that the character in the text fragment is in the right order
+                # Even so, some characters render as multiple faces (e.g., "i").
+                # Only use this scheme if the face count is the same as the text length.
+                # It could still be wrong if the text contains spaces. For example,
+                # "i x" would contain 3 faces and mislead us. Another best effort!
+                if len(faces) == len(self.text) and not " " in self.text:
+                    face_tick = self.text[len(face_sketches)]
+                else:
+                    face_tick = str(len(face_sketches))
+                fragment_name = self.fragment_data[FragmentDataItem.FRAGMENT_NAME]
+                face.label = fragment_name if fragment_name == face_tick else fragment_name + "_" + face_tick
+                # if we did anything with colors, we'd set the face.color here
+                # and possibly suffix the frac.label with the color name
+                face_sketches.append(face)
+            return Compound(children=face_sketches)
 
 
 @functools.lru_cache
@@ -292,7 +322,7 @@ class WhitespaceFragment(Fragment):
             )
         self.whitespace = whitespace
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         with BuildSketch() as sketch:
             Rectangle(_whitespace_width(self.whitespace, height, options), height)
         return sketch.sketch
@@ -539,7 +569,7 @@ class BoltFragment(BoltBase):
     def min_width(self, height: float) -> float:
         return height
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         length = self.length
         # line width: How thick the head and body are
         lw = height / 2.25
@@ -695,7 +725,7 @@ class CullenectBoltFragment(BoltBase):
 
     overheight = 1.6
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         height *= self.overheight
         # 12 mm high for 15 mm wide. Scale to this.
         width = 1.456 * height  # 15 / 12 * height
@@ -1192,7 +1222,7 @@ class _electrical_symbol_fragment(Fragment):
             )
             self.shapes = import_svg(svg_data, flip_y=False)
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         with BuildSketch() as _sketch:
             add(self.shapes)
         bb = _sketch.sketch.bounding_box()
@@ -1219,7 +1249,7 @@ class SplitterFragment(Fragment):
         self.left = float(left or 1)
         self.right = float(right or 1)
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         # This should never happen; for now. We might decide to add
         # options for rendered dividers later.
         raise NotImplementedError("Splitters should never be rendered")
@@ -1238,7 +1268,7 @@ class DimensionFragment(Fragment):
     def min_width(self, height: float) -> float:
         return 1
 
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         lw = 0.4
         with BuildSketch() as sketch:
             with Locations([(-maxsize / 2, 0)]):
@@ -1273,7 +1303,7 @@ class ModifierFragment(Fragment):
 
     # a tiny, tiny circle for a microscopic bounding box, which in any case is invisible
     # this eliminates some tedious special cases in single line processing
-    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         raise NotImplementedError(f"Modifier fragments should never be rendered: {self.__class__.__name__}")
 
 @fragment("color")

@@ -28,7 +28,7 @@ from rich import print
 from enum import Enum, auto
 
 from . import fragments
-from .options import RenderOptions, LabelStyle
+from .options import RenderOptions, LabelStyle, FragmentDataItem
 from .util import IndentingRichHandler, batched
 
 logger = logging.getLogger(__name__)
@@ -70,23 +70,6 @@ def clean_up_name(dirty_name: str):
     if not clean_name or not clean_name[0].isalpha():
         clean_name = "L" + clean_name
     return clean_name
-
-class FragmentDataItem(Enum):
-    FRAGMENT_NAME = auto()
-    COLOR_NAME = auto()
-    XSCALE = auto()
-    YSCALE = auto()
-    ZSCALE = auto()
-    OFFSET = auto()
-
-    @classmethod
-    def _missing_(cls, value):
-        for kind in cls:
-            if kind.name.lower() == value.lower():
-                return kind
-
-    def __str__(self):
-        return self.name.lower()
 
 def _spec_to_fragments(spec: str) -> tuple[list[fragments.Fragment], list[str]]:
     """Convert a single line spec string to a list of renderable fragments."""
@@ -322,7 +305,7 @@ class LabelRenderer:
         # For modifier fragments, the change needs to happen
         # in this loop so that fragment order is preserved.
         # If you need to reference something later, when the
-        # Sketch is extruded into a Part (which is pretty
+        # Sketch is rendered or extruded into a Part (which is pretty
         # likely!), a good technique is to store info as
         # entries in the fragment_data dictionary that gets
         # attached to the Fragment object
@@ -420,77 +403,46 @@ class LabelRenderer:
         # Assemble these onto the target
         x = -total_width / 2
         for fragment, frag_sketch in [(x, rendered[x]) for x in frags]:
-            fragment_name = fragment.fragment_data[FragmentDataItem.FRAGMENT_NAME]
-            fragment_color_name = fragment.fragment_data[FragmentDataItem.COLOR_NAME]
-            xscale = fragment.fragment_data[FragmentDataItem.XSCALE]
-            yscale = fragment.fragment_data[FragmentDataItem.YSCALE]
-            zscale = fragment.fragment_data[FragmentDataItem.ZSCALE]
-            fragment_offset = fragment.fragment_data[FragmentDataItem.OFFSET]
-            fragment_width = frag_sketch.bounding_box().size.X
+            # The rendered value is always a Compound, but it can be a simple Sketch
+            # or a Compound with children.
+            frag_sketches = frag_sketch.children if len(frag_sketch.children)>0 else [frag_sketch]
+            fragment_width = Compound(children=frag_sketches).bounding_box().size.X
             fxy = Location(((x + fragment_width / 2, 0)))
-            with Locations(fxy):
-                if fragment.visible:
-                    if self.opts.text_as_parts and isinstance(fragment, fragments.TextFragment):
-
-                        faces = frag_sketch.get_type(Face)
-                        # build123d text rendering seems to order the faces with the
-                        # final character first, and then the other characters in order.
-                        # I don't know if that always holds true, but rearranging things
-                        # on the assumption that it is. Best effort!
-                        if len(faces):
-                            the_first_shall_be_last = faces.pop(0)
-                            faces.append(the_first_shall_be_last)
-                        face_parts = []
-                        for face in faces:
-                            with BuildPart(mode=Mode.PRIVATE) as face_bpart:
-                                extruded = extrude(face, self.opts.depth)
-                                add(extruded)
-                            face_part = face_bpart.part
-                            # Hoping that the character in the text fragment is in the right order
-                            # Even so, some characters render as multiple faces (e.g., "i").
-                            # Only use this scheme if the face count is the same as the text length.
-                            # It could still be wrong if the text contains spaces. For example,
-                            # "i x" would contain 3 faces and mislead us. Another best effort!
-                            if len(faces) == len(fragment.text) and not " " in fragment.text:
-                                face_tick = fragment.text[len(face_parts)]
-                            else:
-                                face_tick = str(len(face_parts))
-                            face_part_label = clean_up_name(get_global_label(fragment_name + "_" + face_tick))
-                            # We have to extrude each face separately, else the colors and labels get
-                            # lost if we wait and just extrude the Compound
-                            if xscale != 1 or yscale != 1 or zscale != 1:
-                                logger.info(f"Scaling fragment '{face_part_label}' by ({xscale}, {yscale}, {zscale})")
-                                face_part = scale(face_part, (xscale, yscale, zscale))
-                            face_part.color = fragment_color_name
-                            face_part.label = face_part_label
-                            face_parts.append(face_part)
-
-                        child_part = Compound(children=face_parts)
-                    else:
-                            
-                        with BuildPart(mode=Mode.PRIVATE) as child_bpart:
-                            extruded = extrude(frag_sketch, self.opts.depth)
-                            # Rescaling can be performance expensive, so only do it if needed
-                            if xscale != 1 or yscale != 1 or zscale != 1:
-                                logger.info(f"Scaling fragment '{fragment_name}' by ({xscale}, {yscale}, {zscale})")
-                                extruded = scale(extruded, (xscale, yscale, zscale))
-                            add(extruded)
-                        child_part = child_bpart.part
-
-                    child_part.color = fragment_color_name
-                    child_part.locate(fxy)
-                    child_part.move(fragment_offset)
-                    child_part_label = fragment_name if fragment_name else "item" # else shouldn't happen
-                    if fragment_color_name != self.opts.default_color:
-                        child_part_label += "__" + fragment_color_name
-                    child_part.label = clean_up_name(get_global_label(child_part_label))
-                    child_parts.append(child_part)
+            for one_frag_sketch in frag_sketches:
+                fragment_sketch_to_part(self.opts, child_parts, fxy, fragment, one_frag_sketch)
             x += fragment_width
 
         sl_compound = Compound(children=child_parts)
         sl_compound.label = clean_up_name(get_global_label("Line"))
         return sl_compound
-        
+
+def fragment_sketch_to_part(opts: RenderOptions, child_parts: list[Part], fxy: Location, fragment, frag_sketch: Shape) -> None:
+    fragment_name = fragment.fragment_data[FragmentDataItem.FRAGMENT_NAME]
+    fragment_color_name = fragment.fragment_data[FragmentDataItem.COLOR_NAME]
+    with Locations(fxy):
+        if fragment.visible:
+            with BuildPart(mode=Mode.PRIVATE) as child_bpart:
+                extruded = extrude(frag_sketch, opts.depth)
+                # Rescaling can be performance expensive, so only do it if needed
+                xscale = fragment.fragment_data[FragmentDataItem.XSCALE]
+                yscale = fragment.fragment_data[FragmentDataItem.YSCALE]
+                zscale = fragment.fragment_data[FragmentDataItem.ZSCALE]
+                if xscale != 1 or yscale != 1 or zscale != 1:
+                    logger.info(f"Scaling fragment '{fragment_name}' by ({xscale}, {yscale}, {zscale})")
+                    extruded = scale(extruded, (xscale, yscale, zscale))
+                add(extruded)
+            child_part = child_bpart.part
+
+            child_part.color = frag_sketch.color if frag_sketch.color else fragment_color_name
+            child_part.locate(fxy)
+            fragment_offset = fragment.fragment_data[FragmentDataItem.OFFSET]
+            child_part.move(fragment_offset)
+            child_part_label = frag_sketch.label if frag_sketch.label != "" else fragment_name if fragment_name else "item" # else shouldn't happen
+            if fragment_color_name != opts.default_color:
+                child_part_label += "__" + fragment_color_name
+            child_part.label = clean_up_name(get_global_label(child_part_label))
+            child_parts.append(child_part)
+    
 def render_divided_label(
     labels: str, area: Vector, divisions: int, options: RenderOptions) -> Compound:
     """

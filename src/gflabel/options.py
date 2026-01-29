@@ -156,3 +156,20 @@ class RenderOptions(NamedTuple):
             default_color=args.label_color,
             text_as_parts=args.text_as_parts,
         )
+
+class FragmentDataItem(Enum):
+    FRAGMENT_NAME = auto()
+    COLOR_NAME = auto()
+    XSCALE = auto()
+    YSCALE = auto()
+    ZSCALE = auto()
+    OFFSET = auto()
+
+    @classmethod
+    def _missing_(cls, value):
+        for kind in cls:
+            if kind.name.lower() == value.lower():
+                return kind
+
+    def __str__(self):
+        return self.name.lower()
