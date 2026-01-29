@@ -45,6 +45,21 @@ class SvgMono(Enum):
         return self.name.lower()
 
 
+class SvgBase(Enum):
+    NONE = auto()
+    OUTLINE = auto()
+    SOLID = auto()
+
+    @classmethod
+    def _missing_(cls, value):
+        for kind in cls:
+            if kind.name.lower() == value.lower():
+                return kind
+
+    def __str__(self):
+        return self.name.lower()
+
+
 class FontOptions(NamedTuple):
     font: str | None = None
     font_style: FontStyle = FontStyle.REGULAR

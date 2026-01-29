@@ -541,9 +541,8 @@ def render_collection_of_labels(labels:list(str), divisions:int, y_offset_each_l
 
     labels_compound = Compound(children=child_pcomps)
     labels_compound.label = clean_up_name("Labels")
-    logger.debug(f"FULL   COMPOUND {labels_compound}\n{labels_compound.show_topology()}")
+    logger.debug(f"Labels topology {labels_compound}\n{labels_compound.show_topology(limit_class=Part)}")
     simplify_the_tree(labels_compound)
-    logger.info(f"SIMPLIFIED topology\n{labels_compound.show_topology(limit_class=Part)}")
     return labels_compound
 
 def simplify_the_tree(comp: Compound):

@@ -123,8 +123,9 @@ The full command parameter usage (as generate by `gflabel --help`):
 usage: gflabel [-h] [--vscode] [-w WIDTH] [--height HEIGHT] [--label-depth DEPTH] [--depth DEPTH_MM] [--no-overheight] [-d DIVISIONS] [--font FONT]
                [--font-size-maximum FONT_SIZE_MAXIMUM | --font-size FONT_SIZE] [--font-style {regular,bold,italic,bolditalic}] [--font-path FONT_PATH]
                [--margin MARGIN] [-o OUTPUT] [--style {embossed,debossed,embedded}] [--base-color BASE_COLOR] [--label-color LABEL_COLOR]
-               [--svg-mono {none,import,export,both}] [--text-as-parts] [--embedded-lift EMBEDDED_LIFT] [--list-fragments] [--list-symbols]
-               [--label-gap LABEL_GAP] [--column-gap COLUMN_GAP] [--xscale XSCALE] [--yscale YSCALE] [--zscale ZSCALE] [-v] [--version VERSION]
+               [--svg-mono {none,import,export,both}] [--svg-base {none,outline,solid}] [--text-as-parts] [--embedded-lift EMBEDDED_LIFT] [--list-fragments]
+               [--list-symbols] [--label-gap LABEL_GAP] [--column-gap COLUMN_GAP] [--xscale XSCALE] [--yscale YSCALE] [--zscale ZSCALE] [-v]
+               [--version VERSION]
                BASE LABEL [LABEL ...]
 
 Generate gridfinity bin labels
@@ -170,6 +171,9 @@ options:
   --svg-mono {none,import,export,both}
                         SVG imports and exports preserve coloring. You can suppress that (treating SVGs as monochome) with this argument for import, export,
                         or both. Default: none
+  --svg-base {none,outline,solid}
+                        SVG files are normally produced with just the label content and an optional box outline. With this option, an outline or full shape of
+                        the bases can be included. --svg-base takes precedence over --box.
   --text-as-parts       Text fragments are rendered as a single Part. If you specify this argument, they are rendered as Parts for individual characters,
                         which can help identify them in external tools, though the Part labels are 'best effort' and are sometimes disordered.
   --embedded-lift EMBEDDED_LIFT

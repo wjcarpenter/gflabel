@@ -49,7 +49,7 @@ from .bases.plain import PlainBase
 from .bases.pred import PredBase, PredBoxBase
 from .bases.tailor import TailorBoxBase
 from .label import render_collection_of_labels, clean_up_name
-from .options import LabelStyle, RenderOptions, SvgMono
+from .options import LabelStyle, RenderOptions, SvgMono, SvgBase
 from .util import IndentingRichHandler, unit_registry
 
 logger = logging.getLogger(__name__)
@@ -320,6 +320,13 @@ def run(argv: list[str] | None = None):
         type=SvgMono,
     )
     parser.add_argument(
+        "--svg-base",
+        help="SVG files are normally produced with just the label content and an optional box outline. With this option, an outline or full shape of the bases can be included. --svg-base takes precedence over --box.",
+        choices=SvgBase,
+        default=SvgBase.NONE,
+        type=SvgBase,
+    )
+    parser.add_argument(
         "--text-as-parts",
         help="Text fragments are rendered as a single Part. If you specify this argument, they are rendered as Parts for individual characters, which can help identify them in external tools, though the Part labels are 'best effort' and are sometimes disordered.",
         action="store_true",
@@ -519,7 +526,8 @@ def run(argv: list[str] | None = None):
             assembly = Compound(children=[base_part, labels_compound])
         base_part.label = clean_up_name("Base")
         base_part.color = Color(args.base_color)
-
+        logger.info(f"Topology\n{assembly.show_topology(limit_class=Part)}")
+        
     for output in args.output:
         if output.endswith(".stl"):
             logger.info(f"Writing STL {output}")
@@ -533,13 +541,20 @@ def run(argv: list[str] | None = None):
             )
             exporter = ExportSVG(scale=100 / max_dimension)
 
-            if args.box and is_2d:
+            if args.svg_base is not SvgBase.NONE and not is_2d:  # check is_2d since is_2d doesn't render the bases
+                if args.svg_base == SvgBase.OUTLINE:
+                    exporter.add_layer("Base", line_color=Color(args.base_color), line_weight=1)
+                else:
+                    exporter.add_layer("Base", fill_color=Color(args.base_color), line_weight=0)
+                part_in_plane = base_part.intersect(Plane.XY)
+                exporter.add_shape(part_in_plane, layer="Base")
+            elif args.box and is_2d:
                 exporter.add_layer("Box", line_color=Color(args.base_color), line_weight=1)
                 exporter.add_shape(body_box_sketch, layer="Box")
             if args.svg_mono in [SvgMono.EXPORT, SvgMono.BOTH]:
-                exporter.add_layer("Shapes", fill_color=Color(args.label_color), line_weight=0)
+                exporter.add_layer("Labels", fill_color=Color(args.label_color), line_weight=0)
                 compound_in_plane = labels_compound.intersect(Plane.XY)
-                exporter.add_shape(compound_in_plane, layer="Shapes")
+                exporter.add_shape(compound_in_plane, layer="Labels")
             else:
                 layer_dict = {}
                 for pdex, part in enumerate(colored_parts(labels_compound)):
