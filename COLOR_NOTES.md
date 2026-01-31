@@ -6,6 +6,8 @@ There are global default colors for the base and label,
 set via `--base-color` and `--label-color`, respectively.
 They default to `orange` and `blue`.
 Colors can be any of the names standardized in CSS3.
+You can also specify a color in the 6-digit hex notation,
+for example `#008080`.
 
 In addition, there is a label fragment type for changing colors within a label.
 Each line of a label starts with the default label color.
@@ -107,3 +109,94 @@ Have a close look at the spacing between the tips of these letters:
 gflabel --vscode pred 'WWW' 'W{color(blue)}W{color(blue)}W' 
 ```
 <img width="1409" height="772" alt="image" src="https://github.com/user-attachments/assets/ba0cbf84-4dd1-4b19-8fa9-fb75a21d4be1" />
+
+## SVG TREATMENT
+
+SVG files can be produced by `gflabel` (via the `-o` or `--output` options)
+and can also be imported (via the `{svg()}` fragment).
+Treatment of colors is controlled by the `--svf-mono` option, whose argument can be
+`none` (default), `import`, `export`, or `both`.
+With the default, colors are preserved both for imported SVG files
+and for exported SVG files.
+
+Here is an multi-colored example (from [https://www.w3schools.com/graphics/tryit.asp?filename=trysvg_fill0](https://www.w3schools.com/graphics/tryit.asp?filename=trysvg_fill0)):
+```
+gflabel --vscode -o label.step -o fillcolors.svg plain --width 25 --height 15 "{svg(file=wjc/fillcolors.svg)}"
+```
+
+For exported SVG files written in monocolor, the color is the default labels color,
+which can be changed via the `--label-color` option.
+
+For imported SVG files read in monocolor,
+any color values within the SVG file are replaced.
+If a `color` value was given in the `{svg()}` fragment,
+that color is used.
+Else, the default labels color is used.
+The same color choice is used for any element of the SVG file
+that does not have its own color designation when read.
+
+Here is an SVG file (from [https://svgsilh.com/image/1801287.html](https://svgsilh.com/image/1801287.html))
+colored various ways.
+
+The color in the SVG file is black.
+```
+gflabel --vscode -o label.step -o black.svg plain --width 25 --height 25 "{svg(file=wjc/kitten_bw.svg)}"
+```
+
+Here it is colored with the default label color (`blue`).
+```
+gflabel --vscode -o label.step -o blue.svg plain --width 25 --height 25 "{svg(file=wjc/kitten_bw.svg)}" --svg-mono import
+```
+
+Here it is colored `red` due to an earlier `{color()}` fragment.
+
+```
+gflabel --vscode -o label.step -o red.svg plain --width 25 --height 25 "{color(red)}{svg(file=wjc/kitten_bw.svg)}" --svg-mono import
+```
+
+And here it is colored `green` due to an explicit `color` in the `{svg()}` fragment.
+```
+gflabel --vscode -o label.step -o green.svg plain --width 25 --height 25 "{color(red)}{svg(file=wjc/kitten_bw.svg,color=green)}" --svg-mono import
+```
+
+The `{svg()}` fragment the `build123d` function `import_svg()` which in turn
+uses the `ocpsvg` function `import_svg_document()`.
+That function includes the important caveat:
+_This importer does not cover the whole SVG specification, its most notable known limitations are...._
+
+From our point of view, the most important limitations are
+1. it does not import text items at all, and
+1. it only deals with faces and wires.
+1. it chokes on numbers like `100%`
+1. various SVG translations and transformations seem to be ignored
+
+This basic example from
+[https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Getting_started](https://developer.mozilla.org/en-US/docs/Web/SVG/Tutorials/SVG_from_scratch/Getting_started)
+should have text "SVG" in the center of the green circle,
+but the text does not get imported.
+```
+gflabel --vscode -o label.step -o mdn_basic.svg plain --width 25 --height 15 "{svg(file=wjc/mdn_basic.svg)}"
+```
+And sometimes things just go awry.
+An imported element that becomes a `build123s` Wire can't be extruded into a Part because Wires are 1-dimensional.
+The sensible thing to do in such cases is make the Wire 2-dimensional by calling `Wire.trace()`.
+Unfortunately, that often throws an error.
+The `{svg()}` fragment code watches for those errors and implements a tedious fallback strategy.
+A message given in the fallback cases so you can know what happened.
+
+Even after all that, there still seem to be some glitches with complex SVGs.
+Here's the famouse Ghostscript Tiger downloaded from
+[https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg](https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg).
+Something more than half of it works correctly, but it's not close to correct.
+There are a lot of SVGs that just don't import properly this way.
+I've even seen at least one that crashes the program.
+Most simple graphics (without text) work well.
+```
+gflabel --vscode -o tiger.step -o tiger.svg --svg-base solid plain --width 50 --height 25 'Beware of\nTiger!{|}{svg(label=tiger, file=wjc/tiger.svg)}'
+```
+
+Sure, that's still scary, but just compare it to this with an image obtained from
+[https://svgsilh.com/image/161467.html](https://svgsilh.com/image/161467.html)
+```
+gflabel --vscode -o rabbit.step -o rabbit.svg --svg-base solid plain --width 50 --height 25 'Beware of\nRabbit!{|}{svg(label=rabbit, file=wjc/rabbit.svg, color=chocolate)}' --svg-mono import
+```

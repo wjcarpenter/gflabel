@@ -125,6 +125,7 @@ class RenderOptions(NamedTuple):
     depth: float = 0.4
     default_color: str = "black"
     text_as_parts: bool = False
+    svg_mono: SvgMono = SvgMono.NONE
     
     @classmethod
     def from_args(cls, args: argparse.Namespace) -> RenderOptions:
@@ -155,6 +156,7 @@ class RenderOptions(NamedTuple):
             depth=args.depth,
             default_color=args.label_color,
             text_as_parts=args.text_as_parts,
+            svg_mono = args.svg_mono,
         )
 
 class FragmentDataItem(Enum):

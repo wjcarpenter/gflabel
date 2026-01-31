@@ -432,7 +432,6 @@ def fragment_sketch_to_part(opts: RenderOptions, child_parts: list[Part], fxy: L
                     extruded = scale(extruded, (xscale, yscale, zscale))
                 add(extruded)
             child_part = child_bpart.part
-
             child_part.color = frag_sketch.color if frag_sketch.color else fragment_color_name
             child_part.locate(fxy)
             fragment_offset = fragment.fragment_data[FragmentDataItem.OFFSET]

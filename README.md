@@ -286,6 +286,7 @@ A list of all the fragments currently recognised:
 | measure           | Fills as much area as possible with a dimension line, and shows the length. Useful for debugging. |
 | offset            | Apply a placement offset on one or more axes for subsequent fragments on a line.|
 | scale             | Apply a placement offset on one or more axes for subsequent fragments on a line.|
+| svg               | Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_NOTES.md|
 | sym, symbol       | Render an electronic symbol.                                      |
 | threaded_insert   | Representation of a threaded insert.                              |
 | tnut              | T-slot nut.                                                       |
