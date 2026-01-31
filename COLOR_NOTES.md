@@ -80,7 +80,7 @@ gflabel --vscode pred 'Danger! {head(triangle)}' '{color(red)}Danger! {color(bla
 ```
 <img width="1409" height="770" alt="image" src="https://github.com/user-attachments/assets/858d326b-3931-4928-bdc2-afd158556d97" />
 
-And another:
+And another:git push --set-upstream origin SvgFragment
 ```
 gflabel  --vscode pred "{head(hex)} {bolt(50)}\nM5x50" "{color(tan)}{head(hex)} {color(red)}{bolt(50)}\n{color(blue)}M5x50"
 ```
@@ -123,6 +123,7 @@ Here is an multi-colored example (from [https://www.w3schools.com/graphics/tryit
 ```
 gflabel --vscode -o label.step -o fillcolors.svg plain --width 25 --height 15 "{svg(file=wjc/fillcolors.svg)}"
 ```
+<img width="791" height="481" alt="fillcolors" src="https://github.com/user-attachments/assets/916d4577-530e-47aa-a25d-8a428cef812a" />
 
 For exported SVG files written in monocolor, the color is the default labels color,
 which can be changed via the `--label-color` option.
@@ -142,24 +143,28 @@ The color in the SVG file is black.
 ```
 gflabel --vscode -o label.step -o black.svg plain --width 25 --height 25 "{svg(file=wjc/kitten_bw.svg)}"
 ```
+<img width="790" height="787" alt="black" src="https://github.com/user-attachments/assets/2aa07db0-ec4e-4f6a-82ce-94b83df32e40" />
 
 Here it is colored with the default label color (`blue`).
 ```
 gflabel --vscode -o label.step -o blue.svg plain --width 25 --height 25 "{svg(file=wjc/kitten_bw.svg)}" --svg-mono import
 ```
+<img width="786" height="786" alt="blue" src="https://github.com/user-attachments/assets/eace5343-fdbe-44f1-b5ec-0c719b002f35" />
 
 Here it is colored `red` due to an earlier `{color()}` fragment.
 
 ```
 gflabel --vscode -o label.step -o red.svg plain --width 25 --height 25 "{color(red)}{svg(file=wjc/kitten_bw.svg)}" --svg-mono import
 ```
+<img width="777" height="777" alt="red" src="https://github.com/user-attachments/assets/da39fc84-cd90-40dd-9bbb-d088ac551276" />
 
 And here it is colored `green` due to an explicit `color` in the `{svg()}` fragment.
 ```
 gflabel --vscode -o label.step -o green.svg plain --width 25 --height 25 "{color(red)}{svg(file=wjc/kitten_bw.svg,color=green)}" --svg-mono import
 ```
+<img width="781" height="784" alt="green" src="https://github.com/user-attachments/assets/ea3b8efb-2524-4d29-bd50-668b2bc0025c" />
 
-The `{svg()}` fragment the `build123d` function `import_svg()` which in turn
+The `{svg()}` fragment uses the `build123d` function `import_svg()` which in turn
 uses the `ocpsvg` function `import_svg_document()`.
 That function includes the important caveat:
 _This importer does not cover the whole SVG specification, its most notable known limitations are...._
@@ -177,15 +182,17 @@ but the text does not get imported.
 ```
 gflabel --vscode -o label.step -o mdn_basic.svg plain --width 25 --height 15 "{svg(file=wjc/mdn_basic.svg)}"
 ```
+<img width="787" height="479" alt="mdn_basic" src="https://github.com/user-attachments/assets/4219b0dc-90da-4811-ab89-9bffa7645ef2" />
+
 And sometimes things just go awry.
-An imported element that becomes a `build123s` Wire can't be extruded into a Part because Wires are 1-dimensional.
+An imported element that becomes a `build123d` Wire can't be extruded into a Part because Wires are 1-dimensional.
 The sensible thing to do in such cases is make the Wire 2-dimensional by calling `Wire.trace()`.
 Unfortunately, that often throws an error.
 The `{svg()}` fragment code watches for those errors and implements a tedious fallback strategy.
-A message given in the fallback cases so you can know what happened.
+A message is given in the fallback cases so you can know what happened.
 
 Even after all that, there still seem to be some glitches with complex SVGs.
-Here's the famouse Ghostscript Tiger downloaded from
+Here's the famous Ghostscript Tiger, downloaded from
 [https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg](https://commons.wikimedia.org/wiki/File:Ghostscript_Tiger.svg).
 Something more than half of it works correctly, but it's not close to correct.
 There are a lot of SVGs that just don't import properly this way.
@@ -194,9 +201,11 @@ Most simple graphics (without text) work well.
 ```
 gflabel --vscode -o tiger.step -o tiger.svg --svg-base solid plain --width 50 --height 25 'Beware of\nTiger!{|}{svg(label=tiger, file=wjc/tiger.svg)}'
 ```
+<img width="1560" height="786" alt="tiger" src="https://github.com/user-attachments/assets/151f5acb-d443-45f3-87d7-0ea709f01bf0" />
 
-Sure, that's still scary, but just compare it to this with an image obtained from
+Sure, that's still scary, but just compare it to this with  this label using an image obtained from
 [https://svgsilh.com/image/161467.html](https://svgsilh.com/image/161467.html)
 ```
 gflabel --vscode -o rabbit.step -o rabbit.svg --svg-base solid plain --width 50 --height 25 'Beware of\nRabbit!{|}{svg(label=rabbit, file=wjc/rabbit.svg, color=chocolate)}' --svg-mono import
 ```
+<img width="1270" height="646" alt="rabbit" src="https://github.com/user-attachments/assets/ca018ed1-068f-40da-b25a-a3f01fc4589a" />
