@@ -197,6 +197,7 @@ Here's the famous Ghostscript Tiger, downloaded from
 Something more than half of it works correctly, but it's not close to correct.
 There are a lot of SVGs that just don't import properly this way.
 I've even seen at least one that crashes the program.
+Complex SVGs can also take a very long time to import and process.
 Most simple graphics (without text) work well.
 ```
 gflabel --vscode -o tiger.step -o tiger.svg --svg-base solid plain --width 50 --height 25 'Beware of\nTiger!{|}{svg(label=tiger, file=wjc/tiger.svg)}'
@@ -206,6 +207,7 @@ gflabel --vscode -o tiger.step -o tiger.svg --svg-base solid plain --width 50 --
 Sure, that's still scary, but just compare it to this with  this label using an image obtained from
 [https://svgsilh.com/image/161467.html](https://svgsilh.com/image/161467.html)
 ```
-gflabel --vscode -o rabbit.step -o rabbit.svg --svg-base solid plain --width 50 --height 25 'Beware of\nRabbit!{|}{svg(label=rabbit, file=wjc/rabbit.svg, color=chocolate)}' --svg-mono import
+gflabel --vscode -o rabbit.step -o rabbit.svg --svg-base solid plain --width 50 --height 25 'Beware of\nRabbit!{|}{scale(x=0.6,y=0.6)}{svg(label=rabbit, file=wjc/rabbit.svg, color=chocolate)}'
 ```
-<img width="1270" height="646" alt="rabbit" src="https://github.com/user-attachments/assets/ca018ed1-068f-40da-b25a-a3f01fc4589a" />
+<img width="1273" height="648" alt="rabbit" src="https://github.com/user-attachments/assets/b1103abd-20b2-4733-b7ec-8ce7ecbc65dc" />
+
