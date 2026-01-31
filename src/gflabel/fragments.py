@@ -290,7 +290,7 @@ class TextFragment(Fragment):
 
 @fragment("svg")
 class SvgFragment(Fragment):
-    """Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_NOTES.md"""
+    """Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_AND_SVG_NOTES.md"""
 
     examples = ["text{svg(file=/some/mysvg.svg, flip_y=true, label=mysvg, color=green}"]
 
@@ -1405,7 +1405,7 @@ class ModifierFragment(Fragment):
 
 @fragment("color")
 class ColorFragment(ModifierFragment):
-    """Changes the color to be used for subsequent fragments on a line. See COLOR_NOTES.md"""
+    """Changes the color to be used for subsequent fragments on a line. See COLOR_AND_SVG_NOTES.md"""
 
     examples = ["{color(blue)}BLUE{color(green)}GREEN]"]
 
