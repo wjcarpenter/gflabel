@@ -1,6 +1,6 @@
-# Color Notes
+# Color and SVG Notes
 
-## Basics
+## Color Basics
 
 There are global default colors for the base and label,
 set via `--base-color` and `--label-color`, respectively.
@@ -17,19 +17,19 @@ until another color fragment is seen or the end of the line is reached.
 
 There are some examples below.
 They are all rendered in VScode OCP CAD Viewer.
-For each example, a label with just the default colors
+For many examples, a label with just the default colors
 is shown along with the same label using colors.
-The Viewer assemlby tree is expanded to show the node labels in the CAD model.
+The Viewer assembly tree is expanded to show the node labels in the CAD model.
 
 ## Slicers
 
-`gflabel` can produce STL and STEP output files.
+`gflabel` can produce STL, STEP, and 3MF output files.
 STL format is not color-aware.
-STEP format can handle colors,
-and the colors described here are part of the STEP file export from `gflabel`.
-However, treatment of color information when a STEP file is imported into a slicer varies a bit.
-In general, most slicers don't bother with STEP file colors on import.
-(Most CAD tools do, which is not surprising since STEP is a CAD file format.)
+STEP and 3MF formats can handle colors,
+and the colors described here are part of the STEP/3MF file export from `gflabel`.
+However, treatment of color information when a STEP/3MF file is imported into a slicer varies a bit.
+In general, most slicers don't bother with STEP/3MF file colors on import.
+(Some CAD tools do, which is not surprising since STEP and 3MF are a CAD file formats.)
 
 Most slicer color testing was done with Bambu Studio.
 It does not notice colors in STEP files.
@@ -38,6 +38,8 @@ though it deals with them slightly differently.
 The file converter at
 [convert3d.org](https://convert3d.org)
 can convert a STEP file into an OBJ or 3MF file that has colors expressed in a way that Bambu Studio understands.
+As of Bambu Studio 2.5, it understands standard color indications in 3MF files,
+so 3MF output from `gflabel` can be used directly.
 
 If you open one of those 3MF files in Bambu Studio,
 you will immediately see it rendered in the expected colors.
@@ -52,7 +54,7 @@ the color mapping choices it has made.
 But, again, you must map the colors to specific filaments
 when you try to send the sliced model to the 3D printer.
 
-## Examples
+## Color Examples
 
 Here is a very simple example showing a lot of colors:
 ```
@@ -110,7 +112,7 @@ gflabel --vscode pred 'WWW' 'W{color(blue)}W{color(blue)}W'
 ```
 <img width="1409" height="772" alt="image" src="https://github.com/user-attachments/assets/ba0cbf84-4dd1-4b19-8fa9-fb75a21d4be1" />
 
-## SVG TREATMENT
+## SVG Treatment
 
 SVG files can be produced by `gflabel` (via the `-o` or `--output` options)
 and can also be imported (via the `{svg()}` fragment).
@@ -118,6 +120,13 @@ Treatment of colors is controlled by the `--svf-mono` option, whose argument can
 `none` (default), `import`, `export`, or `both`.
 With the default, colors are preserved both for imported SVG files
 and for exported SVG files.
+
+The `{svg()}` fragment takes the following key=value arguments:
+- `file` (required) the path to an SVG file
+- `flip_y` (optional, `true` (default) or `false`) whether to flip the model
+- `color` (optional, defaults to `--label-color`) the name of a color to use SVG elements without specific colors, or all SVG elements when the SVG file is being imported as monocolor
+
+## SVG Examples
 
 Here is an multi-colored example (from [https://www.w3schools.com/graphics/tryit.asp?filename=trysvg_fill0](https://www.w3schools.com/graphics/tryit.asp?filename=trysvg_fill0)):
 ```
