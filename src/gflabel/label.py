@@ -418,6 +418,7 @@ class LabelRenderer:
 
 def fragment_sketch_to_part(opts: RenderOptions, child_parts: list[Part], fxy: Location, fragment, frag_sketch: Shape) -> None:
     fragment_name = fragment.fragment_data[FragmentDataItem.FRAGMENT_NAME]
+    frag_sketch_label = frag_sketch.label
     fragment_color_name = fragment.fragment_data[FragmentDataItem.COLOR_NAME]
     with Locations(fxy):
         if fragment.visible:
@@ -428,16 +429,15 @@ def fragment_sketch_to_part(opts: RenderOptions, child_parts: list[Part], fxy: L
                 yscale = fragment.fragment_data[FragmentDataItem.YSCALE]
                 zscale = fragment.fragment_data[FragmentDataItem.ZSCALE]
                 if xscale != 1 or yscale != 1 or zscale != 1:
-                    logger.info(f"Scaling fragment '{fragment_name}' by ({xscale}, {yscale}, {zscale})")
+                    logger.info(f"Scaling {fragment_name} fragment {frag_sketch_label} by ({xscale}, {yscale}, {zscale})")
                     extruded = scale(extruded, (xscale, yscale, zscale))
                 add(extruded)
             child_part = child_bpart.part
-
             child_part.color = frag_sketch.color if frag_sketch.color else fragment_color_name
             child_part.locate(fxy)
             fragment_offset = fragment.fragment_data[FragmentDataItem.OFFSET]
             child_part.move(fragment_offset)
-            child_part_label = frag_sketch.label if frag_sketch.label != "" else fragment_name if fragment_name else "item" # else shouldn't happen
+            child_part_label = frag_sketch_label if frag_sketch_label else fragment_name if fragment_name else "item" # else shouldn't happen
             if fragment_color_name != opts.default_color:
                 child_part_label += "__" + fragment_color_name
             child_part.label = clean_up_name(get_global_label(child_part_label))
