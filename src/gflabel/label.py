@@ -7,7 +7,6 @@ from __future__ import annotations
 import logging
 import re
 import sys
-from collections.abc import Callable
 
 from build123d import (
     BuildPart,
@@ -16,6 +15,7 @@ from build123d import (
     Locations,
     Mode,
     Part,
+    Shape,
     Sketch,
     Vector,
     add,
@@ -86,7 +86,7 @@ def _spec_to_fragments(spec: str) -> tuple[list[fragments.Fragment], list[str]]:
             fragment_list.append(fragment)
             if isinstance(fragment, fragments.FunctionalFragment):
                 fun_frag = fragment.fn
-                if isinstance(fun_frag, Callable):
+                if callable(fun_frag):
                     fragment_name_list.append(clean_up_name(fun_frag.__name__))
             else:
                 fragment_name_list.append(clean_up_name(fragment.__class__.__name__))
@@ -324,9 +324,9 @@ class LabelRenderer:
         # attached to the Fragment object
 
         current_color = self.opts.default_color
-        current_xscale = 1
-        current_yscale = 1
-        current_zscale = 1
+        current_xscale: float = 1
+        current_yscale: float = 1
+        current_zscale: float = 1
         current_offset = Location(position=(0, 0, 0))
         renderable_frags = []
         for fragdex, fragment in enumerate(frags):
@@ -350,14 +350,14 @@ class LabelRenderer:
                     )
 
             else:
-                fragment_data = {}
+                fragment_data: dict = {}
                 fragment_data[FragmentDataItem.FRAGMENT_NAME] = frag_names[fragdex]
                 fragment_data[FragmentDataItem.COLOR_NAME] = current_color
                 fragment_data[FragmentDataItem.XSCALE] = current_xscale
                 fragment_data[FragmentDataItem.YSCALE] = current_yscale
                 fragment_data[FragmentDataItem.ZSCALE] = current_zscale
                 fragment_data[FragmentDataItem.OFFSET] = current_offset
-                fragment.fragment_data = fragment_data
+                fragment.fragment_data = fragment_data  # type: ignore[attr-defined]
                 renderable_frags.append(fragment)
         frags = renderable_frags
 
@@ -378,7 +378,6 @@ class LabelRenderer:
 
         rendered: dict[fragments.Fragment, Sketch] = {}
         for fragment in [x for x in frags if not x.variable_width]:
-            fragment_name = fragment.fragment_data[FragmentDataItem.FRAGMENT_NAME]
             # Handle overheight if we have overheight turned off
             frag_available_y = Y_available / (
                 1 if allow_overheight else (fragment.overheight or 1)
@@ -417,7 +416,7 @@ class LabelRenderer:
         if total_width > area.X:
             logger.warning("Overfull Hbox: Label is wider than available area")
 
-        child_parts = []
+        child_parts: list[Part] = []
         # Assemble these onto the target
         x = -total_width / 2
         for fragment, frag_sketch in [(x, rendered[x]) for x in frags]:
@@ -508,14 +507,14 @@ def render_divided_label(
 
 
 def render_collection_of_labels(
-    labels: list(str),
+    labels: list[str],
     divisions: int,
     y_offset_each_label: float,
     options: RenderOptions,
     label_area: Vector,
 ) -> Compound:
     child_pcomps = []
-    y = 0
+    y: float = 0
     physical_label_count = 0
     batch_iter = batched(labels, divisions)
     for ba in batch_iter:
@@ -525,7 +524,7 @@ def render_collection_of_labels(
         with Locations([xy]):
             try:
                 ch_pc = render_divided_label(
-                    labels,
+                    labels,  # type: ignore[arg-type]
                     label_area,
                     divisions=divisions,
                     options=options,

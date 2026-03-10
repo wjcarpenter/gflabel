@@ -167,7 +167,7 @@ def base_name_to_subclass(name: str) -> type[LabelBase]:
     return bases[name]
 
 
-def colored_parts(comp: Compound) -> list(Part):
+def colored_parts(comp: Compound) -> list[Part]:
     """Walk the tree of comp to get a list of individual Part objects. Adjust their local locatons to globals along the way."""
     part_list = []
     for child in comp.children:

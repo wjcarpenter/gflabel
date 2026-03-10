@@ -89,7 +89,7 @@ class InvalidFragmentSpecification(RuntimeError):
     pass
 
 
-def _args_to_dict(allowed: list[str] = None, *args):
+def _args_to_dict(allowed: list[str] | None = None, *args):
     args_dict = {}
     for arg in args:
         key, c, value = arg.partition("=")
@@ -274,7 +274,7 @@ class TextFragment(Fragment):
             if len(faces):
                 the_first_shall_be_last = faces.pop(0)
                 faces.append(the_first_shall_be_last)
-            face_sketches = []
+            face_sketches: list[Face] = []
             for face in faces:
                 # Hoping that the character in the text fragment is in the right order
                 # Even so, some characters render as multiple faces (e.g., "i").
@@ -285,7 +285,7 @@ class TextFragment(Fragment):
                     face_tick = self.text[len(face_sketches)]
                 else:
                     face_tick = str(len(face_sketches))
-                fragment_name = self.fragment_data[FragmentDataItem.FRAGMENT_NAME]
+                fragment_name = self.fragment_data[FragmentDataItem.FRAGMENT_NAME]  # type: ignore[attr-defined]
                 face.label = (
                     fragment_name
                     if fragment_name == face_tick
@@ -339,7 +339,7 @@ class SvgFragment(Fragment):
                 shape.color = (
                     self.color
                     if self.color
-                    else self.fragment_data[FragmentDataItem.COLOR_NAME]
+                    else self.fragment_data[FragmentDataItem.COLOR_NAME]  # type: ignore[attr-defined]
                 )
             label_from_file = shape.label if shape.label else str(sdex)
             label = (
@@ -373,7 +373,7 @@ class SvgFragment(Fragment):
                 shape = copy.deepcopy(shape)
                 try:
                     shape = trace(shape, 0.1)
-                except:
+                except Exception:
                     logger.info(
                         f"SvgFragment id: '{label_from_file}' trace() of {shape.__class__.__name__} failed, iterating Edges."
                     )
@@ -382,7 +382,7 @@ class SvgFragment(Fragment):
                         try:
                             traced_edge = trace(edge, 0.1)
                             traced_edges.append(traced_edge)
-                        except:
+                        except Exception:
                             logger.info(
                                 f"SvgFragment id: '{label_from_file}' trace() of Edge {edex} failed, using Vertices."
                             )

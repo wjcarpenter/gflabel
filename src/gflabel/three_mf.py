@@ -35,7 +35,7 @@ def _color_to_hex(color: Color | str | None) -> str:
 
     r, g, b = (rgb[0], rgb[1], rgb[2])
 
-    def clamp_channel(val: float) -> int:
+    def clamp_channel(val: float | None) -> int:
         if val is None:
             return 128
         return max(0, min(255, int(round(val * 255 if val <= 1 else val))))
@@ -49,7 +49,7 @@ def apply_3mf_face_colors(path: str, parts: list[Part]) -> None:
     reader = model.QueryReader("3mf")
     reader.ReadFromFile(path)
 
-    mesh_objects: list[object] = []
+    mesh_objects: list = []
     mesh_iter = model.GetMeshObjects()
     while mesh_iter.MoveNext():
         mesh_objects.append(mesh_iter.GetCurrent())
