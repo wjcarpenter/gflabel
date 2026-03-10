@@ -116,7 +116,7 @@ gflabel --vscode pred 'WWW' 'W{color(blue)}W{color(blue)}W'
 
 SVG files can be produced by `gflabel` (via the `-o` or `--output` options)
 and can also be imported (via the `{svg()}` fragment).
-Treatment of colors is controlled by the `--svf-mono` option, whose argument can be
+Treatment of colors is controlled by the `--svg-mono` option, whose argument can be
 `none` (default), `import`, `export`, or `both`.
 With the default, colors are preserved both for imported SVG files
 and for exported SVG files.
