@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from build123d import Color, Part
 import lib3mf
+from build123d import Color, Part
 
 
 def _color_to_hex(color: Color | str | None) -> str:

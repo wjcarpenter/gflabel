@@ -27,17 +27,15 @@ from build123d import (
     Keep,
     Location,
     Locations,
-    Mode,
     Mesher,
+    Mode,
     Part,
     Plane,
     RectangleRounded,
-    Solid,
     Vector,
     add,
     export_step,
     export_stl,
-    extrude,
     scale,
 )
 
@@ -49,8 +47,8 @@ from .bases.none import NoneBase
 from .bases.plain import PlainBase
 from .bases.pred import PredBase, PredBoxBase
 from .bases.tailor import TailorBoxBase
-from .label import render_collection_of_labels, clean_up_name
-from .options import LabelStyle, RenderOptions, SvgMono, SvgBase
+from .label import clean_up_name, render_collection_of_labels
+from .options import LabelStyle, RenderOptions, SvgBase, SvgMono
 from .three_mf import apply_3mf_face_colors
 from .util import IndentingRichHandler, unit_registry
 
@@ -581,7 +579,7 @@ def run(argv: list[str] | None = None):
                 for pdex, part in enumerate(colored_parts(labels_compound)):
                     color = part.color
                     color_str = str(color)
-                    if not color_str in layer_dict:
+                    if color_str not in layer_dict:
                         exporter.add_layer(
                             name=color_str, fill_color=color, line_weight=0
                         )

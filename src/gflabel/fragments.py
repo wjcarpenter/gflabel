@@ -22,7 +22,6 @@ from build123d import (
     BuildSketch,
     CenterArc,
     Circle,
-    Color,
     Compound,
     Edge,
     EllipticalCenterArc,
@@ -54,7 +53,7 @@ from build123d import (
     trace,
 )
 
-from .options import RenderOptions, FragmentDataItem, SvgMono
+from .options import FragmentDataItem, RenderOptions, SvgMono
 from .util import format_table
 
 logger = logging.getLogger(__name__)
@@ -90,18 +89,23 @@ class InvalidFragmentSpecification(RuntimeError):
     pass
 
 
-def _args_to_dict(allowed:list[str]=None, *args):
+def _args_to_dict(allowed: list[str] = None, *args):
     args_dict = {}
     for arg in args:
         key, c, value = arg.partition("=")
         key = key.strip().casefold()
         value = value.strip()
         if not c or not value:
-            raise InvalidFragmentSpecification(f"KEY=VALUE arguments expected, but saw {arg}.")
-        if allowed and not key in allowed:
-            raise InvalidFragmentSpecification(f"Key {key} is unexpected. Wanted one of {allowed}")
+            raise InvalidFragmentSpecification(
+                f"KEY=VALUE arguments expected, but saw {arg}."
+            )
+        if allowed and key not in allowed:
+            raise InvalidFragmentSpecification(
+                f"Key {key} is unexpected. Wanted one of {allowed}"
+            )
         args_dict[key] = value
     return args_dict
+
 
 def fragment_from_spec(spec: str) -> Fragment:
     # If the fragment is just a number, this is distance to space out
@@ -277,16 +281,21 @@ class TextFragment(Fragment):
                 # Only use this scheme if the face count is the same as the text length.
                 # It could still be wrong if the text contains spaces. For example,
                 # "i x" would contain 3 faces and mislead us. Another best effort!
-                if len(faces) == len(self.text) and not " " in self.text:
+                if len(faces) == len(self.text) and " " not in self.text:
                     face_tick = self.text[len(face_sketches)]
                 else:
                     face_tick = str(len(face_sketches))
                 fragment_name = self.fragment_data[FragmentDataItem.FRAGMENT_NAME]
-                face.label = fragment_name if fragment_name == face_tick else fragment_name + "_" + face_tick
+                face.label = (
+                    fragment_name
+                    if fragment_name == face_tick
+                    else fragment_name + "_" + face_tick
+                )
                 # if we did anything with colors, we'd set the face.color here
                 # and possibly suffix the frac.label with the color name
                 face_sketches.append(face)
             return Compound(children=face_sketches)
+
 
 @fragment("svg")
 class SvgFragment(Fragment):
@@ -295,13 +304,15 @@ class SvgFragment(Fragment):
     examples = ["text{svg(file=/some/mysvg.svg, flip_y=true, label=mysvg, color=green}"]
 
     def __init__(self, *args: list[str]):
-        args_dict = _args_to_dict(["file","flip_y","label","color"], *args)
+        args_dict = _args_to_dict(["file", "flip_y", "label", "color"], *args)
         # file is required
-        if not "file" in args_dict:
-            raise InvalidFragmentSpecification(f"SvgFragment file argument is required but missing. {args_dict}'.")
+        if "file" not in args_dict:
+            raise InvalidFragmentSpecification(
+                f"SvgFragment file argument is required but missing. {args_dict}'."
+            )
         self.file = args_dict["file"]
 
-        if not "flip_y" in args_dict:
+        if "flip_y" not in args_dict:
             self.flip_y = True
         else:
             fy = args_dict["flip_y"].casefold()
@@ -310,11 +321,13 @@ class SvgFragment(Fragment):
             elif fy == "true":
                 self.flip_y = True
             else:
-                raise InvalidFragmentSpecification(f"SvgFragment flip_y argument, if given, must be true or false. {args_dict}")
+                raise InvalidFragmentSpecification(
+                    f"SvgFragment flip_y argument, if given, must be true or false. {args_dict}"
+                )
 
         self.label = args_dict.get("label", "")
         self.color = args_dict.get("color", None)
-        
+
     def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         if not height:
             raise ValueError("Trying to render zero-height fragment")
@@ -323,9 +336,15 @@ class SvgFragment(Fragment):
             logger.info(f"Discarding SVG colors due to --svg-mono {options.svg_mono}")
         for sdex, shape in enumerate(shapes):
             if options.svg_mono in [SvgMono.BOTH, SvgMono.IMPORT]:
-                shape.color = self.color if self.color else self.fragment_data[FragmentDataItem.COLOR_NAME]
+                shape.color = (
+                    self.color
+                    if self.color
+                    else self.fragment_data[FragmentDataItem.COLOR_NAME]
+                )
             label_from_file = shape.label if shape.label else str(sdex)
-            label = self.label + "_" + label_from_file if self.label else label_from_file
+            label = (
+                self.label + "_" + label_from_file if self.label else label_from_file
+            )
             shape.label = label
             shape.label_from_file = label_from_file
             if shape.location.position.X != 0 or shape.location.position.Y != 0:
@@ -355,17 +374,23 @@ class SvgFragment(Fragment):
                 try:
                     shape = trace(shape, 0.1)
                 except:
-                    logger.info(f"SvgFragment id: '{label_from_file}' trace() of {shape.__class__.__name__} failed, iterating Edges.")
+                    logger.info(
+                        f"SvgFragment id: '{label_from_file}' trace() of {shape.__class__.__name__} failed, iterating Edges."
+                    )
                     traced_edges = []
                     for edex, edge in enumerate(shape.edges()):
                         try:
                             traced_edge = trace(edge, 0.1)
                             traced_edges.append(traced_edge)
                         except:
-                            logger.info(f"SvgFragment id: '{label_from_file}' trace() of Edge {edex} failed, using Vertices.")
+                            logger.info(
+                                f"SvgFragment id: '{label_from_file}' trace() of Edge {edex} failed, using Vertices."
+                            )
                             vertices = edge.vertices()
                             if len(vertices) != 2:
-                                logger.info(f"SvgFragment id: '{label_from_file}' Edge {edex}, expected 2 vertices, saw {len(vertices)}")
+                                logger.info(
+                                    f"SvgFragment id: '{label_from_file}' Edge {edex}, expected 2 vertices, saw {len(vertices)}"
+                                )
                             new_edge = Edge.make_line(vertices[0], vertices[1])
                             traced_edge = trace(new_edge, 0.1)
                             traced_edges.append(traced_edge)
@@ -381,6 +406,7 @@ class SvgFragment(Fragment):
                 scaled_shapes.append(scaled_shape)
         svg_compound = Compound(children=scaled_shapes)
         return svg_compound
+
 
 @functools.lru_cache
 def _whitespace_width(spacechar: str, height: float, options: RenderOptions) -> float:
@@ -1575,7 +1601,10 @@ class ModifierFragment(Fragment):
     # a tiny, tiny circle for a microscopic bounding box, which in any case is invisible
     # this eliminates some tedious special cases in single line processing
     def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
-        raise NotImplementedError(f"Modifier fragments should never be rendered: {self.__class__.__name__}")
+        raise NotImplementedError(
+            f"Modifier fragments should never be rendered: {self.__class__.__name__}"
+        )
+
 
 @fragment("color")
 class ColorFragment(ModifierFragment):
@@ -1586,6 +1615,7 @@ class ColorFragment(ModifierFragment):
     def __init__(self, color_name: str):
         self.color = color_name
 
+
 @fragment("scale")
 class ScaleFragment(ModifierFragment):
     """Apply a scaling on one or more axes for subsequent fragments on a line."""
@@ -1594,11 +1624,14 @@ class ScaleFragment(ModifierFragment):
 
     def __init__(self, *args: list[str]):
         if len(args) == 0 or len(args) > 3:
-            raise InvalidFragmentSpecification(f"For scale fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}")
-        args_dict = _args_to_dict(["x","y","z"], *args)
+            raise InvalidFragmentSpecification(
+                f"For scale fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}"
+            )
+        args_dict = _args_to_dict(["x", "y", "z"], *args)
         self.x = float(args_dict.get("x", "1"))
         self.y = float(args_dict.get("y", "1"))
         self.z = float(args_dict.get("z", "1"))
+
 
 @fragment("offset")
 class OffsetFragment(ModifierFragment):
@@ -1608,11 +1641,14 @@ class OffsetFragment(ModifierFragment):
 
     def __init__(self, *args: list[str]):
         if len(args) == 0 or len(args) > 3:
-            raise InvalidFragmentSpecification(f"For offset fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}")
-        args_dict = _args_to_dict(["x","y","z"], *args)
+            raise InvalidFragmentSpecification(
+                f"For offset fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}"
+            )
+        args_dict = _args_to_dict(["x", "y", "z"], *args)
         self.x = float(args_dict.get("x", "0"))
         self.y = float(args_dict.get("y", "0"))
         self.z = float(args_dict.get("z", "0"))
+
 
 @fragment("magnet", examples=["{magnet}"])
 def _fragment_magnet(height: float, _maxsize: float) -> Sketch:
