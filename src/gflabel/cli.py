@@ -27,17 +27,15 @@ from build123d import (
     Keep,
     Location,
     Locations,
-    Mode,
     Mesher,
+    Mode,
     Part,
     Plane,
     RectangleRounded,
-    Solid,
     Vector,
     add,
     export_step,
     export_stl,
-    extrude,
     scale,
 )
 
@@ -48,10 +46,9 @@ from .bases.modern import ModernBase
 from .bases.none import NoneBase
 from .bases.plain import PlainBase
 from .bases.pred import PredBase, PredBoxBase
-
-# from .bases.tailor import TailorBoxBase
-from .label import render_collection_of_labels, clean_up_name
-from .options import LabelStyle, RenderOptions, SvgMono, SvgBase
+from .bases.tailor import TailorBoxBase
+from .label import clean_up_name, render_collection_of_labels
+from .options import LabelStyle, RenderOptions, SvgBase, SvgMono
 from .three_mf import apply_3mf_face_colors
 from .util import IndentingRichHandler, unit_registry
 
@@ -158,7 +155,7 @@ def base_name_to_subclass(name: str) -> type[LabelBase]:
         "modern": ModernBase,
         "pred": PredBase,
         "predbox": PredBoxBase,
-        # "tailorbox": TailorBoxBase,
+        "tailorbox": TailorBoxBase,
         "plain": PlainBase,
         "none": NoneBase,
         None: NoneBase,
@@ -170,7 +167,7 @@ def base_name_to_subclass(name: str) -> type[LabelBase]:
     return bases[name]
 
 
-def colored_parts(comp: Compound) -> list(Part):
+def colored_parts(comp: Compound) -> list[Part]:
     """Walk the tree of comp to get a list of individual Part objects. Adjust their local locatons to globals along the way."""
     part_list = []
     for child in comp.children:
@@ -205,7 +202,7 @@ def run(argv: list[str] | None = None):
     parser.add_argument(
         "base",
         metavar="BASE",
-        help="Label base to generate onto (pred, plain, none, cullenect, predbox, modern).",
+        help="Label base to generate onto (pred, plain, none, cullenect, predbox, tailorbox, modern).",
         action=BaseChoiceAction,
     )
     parser.add_argument(
@@ -582,7 +579,7 @@ def run(argv: list[str] | None = None):
                 for pdex, part in enumerate(colored_parts(labels_compound)):
                     color = part.color
                     color_str = str(color)
-                    if not color_str in layer_dict:
+                    if color_str not in layer_dict:
                         exporter.add_layer(
                             name=color_str, fill_color=color, line_weight=0
                         )

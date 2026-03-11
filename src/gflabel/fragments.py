@@ -22,7 +22,6 @@ from build123d import (
     BuildSketch,
     CenterArc,
     Circle,
-    Color,
     Compound,
     Edge,
     EllipticalCenterArc,
@@ -54,7 +53,7 @@ from build123d import (
     trace,
 )
 
-from .options import RenderOptions, FragmentDataItem, SvgMono
+from .options import FragmentDataItem, RenderOptions, SvgMono
 from .util import format_table
 
 logger = logging.getLogger(__name__)
@@ -90,18 +89,23 @@ class InvalidFragmentSpecification(RuntimeError):
     pass
 
 
-def _args_to_dict(allowed:list[str]=None, *args):
+def _args_to_dict(allowed: list[str] | None = None, *args):
     args_dict = {}
     for arg in args:
         key, c, value = arg.partition("=")
         key = key.strip().casefold()
         value = value.strip()
         if not c or not value:
-            raise InvalidFragmentSpecification(f"KEY=VALUE arguments expected, but saw {arg}.")
-        if allowed and not key in allowed:
-            raise InvalidFragmentSpecification(f"Key {key} is unexpected. Wanted one of {allowed}")
+            raise InvalidFragmentSpecification(
+                f"KEY=VALUE arguments expected, but saw {arg}."
+            )
+        if allowed and key not in allowed:
+            raise InvalidFragmentSpecification(
+                f"Key {key} is unexpected. Wanted one of {allowed}"
+            )
         args_dict[key] = value
     return args_dict
+
 
 def fragment_from_spec(spec: str) -> Fragment:
     # If the fragment is just a number, this is distance to space out
@@ -270,23 +274,28 @@ class TextFragment(Fragment):
             if len(faces):
                 the_first_shall_be_last = faces.pop(0)
                 faces.append(the_first_shall_be_last)
-            face_sketches = []
+            face_sketches: list[Face] = []
             for face in faces:
                 # Hoping that the character in the text fragment is in the right order
                 # Even so, some characters render as multiple faces (e.g., "i").
                 # Only use this scheme if the face count is the same as the text length.
                 # It could still be wrong if the text contains spaces. For example,
                 # "i x" would contain 3 faces and mislead us. Another best effort!
-                if len(faces) == len(self.text) and not " " in self.text:
+                if len(faces) == len(self.text) and " " not in self.text:
                     face_tick = self.text[len(face_sketches)]
                 else:
                     face_tick = str(len(face_sketches))
-                fragment_name = self.fragment_data[FragmentDataItem.FRAGMENT_NAME]
-                face.label = fragment_name if fragment_name == face_tick else fragment_name + "_" + face_tick
+                fragment_name = self.fragment_data[FragmentDataItem.FRAGMENT_NAME]  # type: ignore[attr-defined]
+                face.label = (
+                    fragment_name
+                    if fragment_name == face_tick
+                    else fragment_name + "_" + face_tick
+                )
                 # if we did anything with colors, we'd set the face.color here
                 # and possibly suffix the frac.label with the color name
                 face_sketches.append(face)
             return Compound(children=face_sketches)
+
 
 @fragment("svg")
 class SvgFragment(Fragment):
@@ -295,13 +304,15 @@ class SvgFragment(Fragment):
     examples = ["text{svg(file=/some/mysvg.svg, flip_y=true, label=mysvg, color=green}"]
 
     def __init__(self, *args: list[str]):
-        args_dict = _args_to_dict(["file","flip_y","label","color"], *args)
+        args_dict = _args_to_dict(["file", "flip_y", "label", "color"], *args)
         # file is required
-        if not "file" in args_dict:
-            raise InvalidFragmentSpecification(f"SvgFragment file argument is required but missing. {args_dict}'.")
+        if "file" not in args_dict:
+            raise InvalidFragmentSpecification(
+                f"SvgFragment file argument is required but missing. {args_dict}'."
+            )
         self.file = args_dict["file"]
 
-        if not "flip_y" in args_dict:
+        if "flip_y" not in args_dict:
             self.flip_y = True
         else:
             fy = args_dict["flip_y"].casefold()
@@ -310,11 +321,13 @@ class SvgFragment(Fragment):
             elif fy == "true":
                 self.flip_y = True
             else:
-                raise InvalidFragmentSpecification(f"SvgFragment flip_y argument, if given, must be true or false. {args_dict}")
+                raise InvalidFragmentSpecification(
+                    f"SvgFragment flip_y argument, if given, must be true or false. {args_dict}"
+                )
 
         self.label = args_dict.get("label", "")
         self.color = args_dict.get("color", None)
-        
+
     def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         if not height:
             raise ValueError("Trying to render zero-height fragment")
@@ -323,9 +336,15 @@ class SvgFragment(Fragment):
             logger.info(f"Discarding SVG colors due to --svg-mono {options.svg_mono}")
         for sdex, shape in enumerate(shapes):
             if options.svg_mono in [SvgMono.BOTH, SvgMono.IMPORT]:
-                shape.color = self.color if self.color else self.fragment_data[FragmentDataItem.COLOR_NAME]
+                shape.color = (
+                    self.color
+                    if self.color
+                    else self.fragment_data[FragmentDataItem.COLOR_NAME]  # type: ignore[attr-defined]
+                )
             label_from_file = shape.label if shape.label else str(sdex)
-            label = self.label + "_" + label_from_file if self.label else label_from_file
+            label = (
+                self.label + "_" + label_from_file if self.label else label_from_file
+            )
             shape.label = label
             shape.label_from_file = label_from_file
             if shape.location.position.X != 0 or shape.location.position.Y != 0:
@@ -354,18 +373,24 @@ class SvgFragment(Fragment):
                 shape = copy.deepcopy(shape)
                 try:
                     shape = trace(shape, 0.1)
-                except:
-                    logger.info(f"SvgFragment id: '{label_from_file}' trace() of {shape.__class__.__name__} failed, iterating Edges.")
+                except Exception:
+                    logger.info(
+                        f"SvgFragment id: '{label_from_file}' trace() of {shape.__class__.__name__} failed, iterating Edges."
+                    )
                     traced_edges = []
                     for edex, edge in enumerate(shape.edges()):
                         try:
                             traced_edge = trace(edge, 0.1)
                             traced_edges.append(traced_edge)
-                        except:
-                            logger.info(f"SvgFragment id: '{label_from_file}' trace() of Edge {edex} failed, using Vertices.")
+                        except Exception:
+                            logger.info(
+                                f"SvgFragment id: '{label_from_file}' trace() of Edge {edex} failed, using Vertices."
+                            )
                             vertices = edge.vertices()
                             if len(vertices) != 2:
-                                logger.info(f"SvgFragment id: '{label_from_file}' Edge {edex}, expected 2 vertices, saw {len(vertices)}")
+                                logger.info(
+                                    f"SvgFragment id: '{label_from_file}' Edge {edex}, expected 2 vertices, saw {len(vertices)}"
+                                )
                             new_edge = Edge.make_line(vertices[0], vertices[1])
                             traced_edge = trace(new_edge, 0.1)
                             traced_edges.append(traced_edge)
@@ -381,6 +406,7 @@ class SvgFragment(Fragment):
                 scaled_shapes.append(scaled_shape)
         svg_compound = Compound(children=scaled_shapes)
         return svg_compound
+
 
 @functools.lru_cache
 def _whitespace_width(spacechar: str, height: float, options: RenderOptions) -> float:
@@ -598,12 +624,22 @@ def _fragment_circle(height: float, _maxsize: float) -> Sketch:
     return sketch.sketch
 
 
+@fragment("squarenut", "square_nut", examples=["{square_nut}"])
+def _fragment_square_nut(height: float, _maxsize: float) -> Sketch:
+    """Square with a circular hole."""
+    with BuildSketch(mode=Mode.PRIVATE) as sketch:
+        inner_radius = 0.55
+        Rectangle(height, height)
+        Circle(height / 2 * inner_radius, mode=Mode.SUBTRACT)
+    return sketch.sketch
+
+
 @fragment("tnut", examples=["{tnut}"])
 def _fragment_tnut(height: float, _maxsize: float) -> Sketch:
     """T-slot nut."""
     with BuildSketch(mode=Mode.PRIVATE) as sketch:
         RectangleRounded(height * 0.6, height, height / 7)
-        Circle((height*0.4) / 2, mode=Mode.SUBTRACT)
+        Circle((height * 0.4) / 2, mode=Mode.SUBTRACT)
 
     return sketch.sketch
 
@@ -612,7 +648,7 @@ class BoltBase(Fragment):
     """Base class for handling common bolt/screw configuration"""
 
     # The options for head shape
-    HEAD_SHAPES = {"countersunk", "pan", "round", "socket"}
+    HEAD_SHAPES = {"countersunk", "pan", "round", "socket", "wafer"}
     # Other, non-drive features
     MODIFIERS = {"tapping", "flip", "partial"}
     # Other names that features can be known as, and what they map to
@@ -640,6 +676,7 @@ class BoltBase(Fragment):
         self.partial = "partial" in self.modifiers
         features -= self.MODIFIERS
 
+        features = {DRIVE_ALIASES.get(x.lower(), x.lower()) for x in features}
         # Drives is everything left
         self.drives = features
 
@@ -736,6 +773,19 @@ class BoltFragment(BoltBase):
                             (-hw + lw, -head_h),
                             (-hw, -head_h),
                             (-hw, head_h),
+                            (-hw + lw, head_h),
+                        ]
+                    )
+                    head_connector_bottom = _head @ 0
+                    head_connector_top = _head @ 1
+                elif self.headshape == "wafer":
+                    # for the wafer head, use a "socket head", but the head
+                    # being only 1/3 the linewidth thick
+                    _head = Polyline(
+                        [
+                            (-hw + lw, -head_h),
+                            (-hw + lw * 2 / 3, -head_h),
+                            (-hw + lw * 2 / 3, head_h),
                             (-hw + lw, head_h),
                         ]
                     )
@@ -1276,7 +1326,7 @@ def _match_electronic_symbol_with_selectors(selectors: Iterable[str]) -> Manifes
         matches = _match_electronic_symbol_from_standard(standards_order, matches)
         if len(matches) == 1:
             logger.debug(
-                f"Using symbol \"{matches[0]['id']}\" because standard [b]{matches[0]['standard']}[/b] is preferred.",
+                f'Using symbol "{matches[0]["id"]}" because standard [b]{matches[0]["standard"]}[/b] is preferred.',
                 extra={"markup": True},
             )
             return matches[0]
@@ -1287,7 +1337,7 @@ def _match_electronic_symbol_with_selectors(selectors: Iterable[str]) -> Manifes
     if matches:
         cols = ["ID", "Category", "Name", "Standard", "Filename"]
         logger.error(
-            f"Could not decide on symbol from fuzzy specification \"{','.join(requested)}\". Possible options:"
+            f'Could not decide on symbol from fuzzy specification "{",".join(requested)}". Possible options:'
             + "\n"
             + "\n".join(
                 format_table(cols, matches, lambda x: x.lower(), prefix="    ")
@@ -1296,7 +1346,7 @@ def _match_electronic_symbol_with_selectors(selectors: Iterable[str]) -> Manifes
         )
     else:
         logger.error(
-            f"No electronic symbols matched the specification \"{','.join(requested)}\""
+            f'No electronic symbols matched the specification "{",".join(requested)}"'
         )
     raise InvalidFragmentSpecification("Please specify symbol more precisely.")
 
@@ -1325,6 +1375,156 @@ class _electrical_symbol_fragment(Fragment):
         bb = _sketch.sketch.bounding_box()
         # Resize this to match the requested height, and to be centered
         return _sketch.sketch.translate(-bb.center()).scale(height / bb.size.Y)
+
+
+@fragment("qr", "qrcode")
+class QRCodeFragment(Fragment):
+    """
+    Generate a QR code from text or URL data.
+
+    The QR code will scale to fit the available height. For best results,
+    ensure the label height is at least 10mm for reliable scanning.
+
+    Arguments:
+        data: The text/URL to encode
+        error: Error correction level (L, M, Q, H). Default: M
+               L=7%, M=15%, Q=25%, H=30% recovery capacity
+
+    Examples:
+        {qr(https://example.com)}
+        {qr(PART-12345,H)}
+    """
+
+    examples = ["{qr(https://example.com)}"]
+
+    # Error correction level mapping
+    ERROR_LEVELS = {"L", "M", "Q", "H"}
+
+    def __init__(self, data: str, error: str = "M", *args: list[Any]):
+        if args:
+            raise ValueError(f"Unexpected arguments: {args}")
+
+        self.data = data
+        error = error.upper()
+        if error not in self.ERROR_LEVELS:
+            raise ValueError(
+                f"Invalid error correction level '{error}'. Must be one of: L, M, Q, H"
+            )
+        self.error = error
+
+        # Generate QR code matrix
+        try:
+            import segno
+        except ImportError:
+            raise ImportError(
+                "QR code support requires the 'segno' package. "
+                "Install it with: pip install segno"
+            )
+
+        self.qr = segno.make(data, error=error)
+
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+        # Get the QR matrix (list of lists of bools)
+        matrix = self.qr.matrix
+        size = len(matrix)
+
+        # Calculate module size to fit height
+        module_size = height / size
+
+        # Build sketch with rectangles for each dark module
+        with BuildSketch() as sketch:
+            for row_idx, row in enumerate(matrix):
+                for col_idx, is_dark in enumerate(row):
+                    if is_dark:
+                        # Calculate center position for this module
+                        # Origin at center of QR code
+                        x = (col_idx - size / 2 + 0.5) * module_size
+                        y = (size / 2 - row_idx - 0.5) * module_size  # Flip Y
+                        with Locations([(x, y)]):
+                            Rectangle(module_size, module_size)
+
+        return sketch.sketch
+
+
+@fragment("microqr", "mqr")
+class MicroQRCodeFragment(Fragment):
+    """
+    Generate a Micro QR code - smaller than standard QR for compact labels.
+
+    Micro QR codes have only one position pattern (corner) instead of three,
+    making them much more compact. Ideal for small labels under 15mm.
+
+    Capacity limits (varies by error correction):
+        - Numeric: up to 35 digits
+        - Alphanumeric: up to 21 characters
+        - Bytes: up to 15 characters
+
+    Arguments:
+        data: The text to encode (keep it short!)
+        error: Error correction level (L, M, Q). Default: L
+               Note: Micro QR doesn't support H level
+
+    Examples:
+        {microqr(M3-10)}
+        {mqr(12345,M)}
+    """
+
+    examples = ["{microqr(PART-01)}"]
+
+    # Micro QR only supports L, M, Q (no H)
+    ERROR_LEVELS = {"L", "M", "Q"}
+
+    def __init__(self, data: str, error: str = "L", *args: list[Any]):
+        if args:
+            raise ValueError(f"Unexpected arguments: {args}")
+
+        self.data = data
+        error = error.upper()
+        if error not in self.ERROR_LEVELS:
+            raise ValueError(
+                f"Invalid error correction level '{error}'. "
+                "Micro QR supports: L, M, Q (not H)"
+            )
+        self.error = error
+
+        # Generate Micro QR code matrix
+        try:
+            import segno
+        except ImportError:
+            raise ImportError(
+                "QR code support requires the 'segno' package. "
+                "Install it with: pip install segno"
+            )
+
+        try:
+            self.qr = segno.make_micro(data, error=error)
+        except segno.DataOverflowError:
+            raise ValueError(
+                f"Data too long for Micro QR code: '{data}'. "
+                "Try shorter text or use regular {qr(...)} instead."
+            )
+
+    def render(self, height: float, maxsize: float, options: RenderOptions) -> Sketch:
+        # Get the QR matrix (list of lists of bools)
+        matrix = self.qr.matrix
+        size = len(matrix)
+
+        # Calculate module size to fit height
+        module_size = height / size
+
+        # Build sketch with rectangles for each dark module
+        with BuildSketch() as sketch:
+            for row_idx, row in enumerate(matrix):
+                for col_idx, is_dark in enumerate(row):
+                    if is_dark:
+                        # Calculate center position for this module
+                        # Origin at center of QR code
+                        x = (col_idx - size / 2 + 0.5) * module_size
+                        y = (size / 2 - row_idx - 0.5) * module_size  # Flip Y
+                        with Locations([(x, y)]):
+                            Rectangle(module_size, module_size)
+
+        return sketch.sketch
 
 
 @fragment("|")
@@ -1401,7 +1601,10 @@ class ModifierFragment(Fragment):
     # a tiny, tiny circle for a microscopic bounding box, which in any case is invisible
     # this eliminates some tedious special cases in single line processing
     def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
-        raise NotImplementedError(f"Modifier fragments should never be rendered: {self.__class__.__name__}")
+        raise NotImplementedError(
+            f"Modifier fragments should never be rendered: {self.__class__.__name__}"
+        )
+
 
 @fragment("color")
 class ColorFragment(ModifierFragment):
@@ -1412,6 +1615,7 @@ class ColorFragment(ModifierFragment):
     def __init__(self, color_name: str):
         self.color = color_name
 
+
 @fragment("scale")
 class ScaleFragment(ModifierFragment):
     """Apply a scaling on one or more axes for subsequent fragments on a line."""
@@ -1420,11 +1624,14 @@ class ScaleFragment(ModifierFragment):
 
     def __init__(self, *args: list[str]):
         if len(args) == 0 or len(args) > 3:
-            raise InvalidFragmentSpecification(f"For scale fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}")
-        args_dict = _args_to_dict(["x","y","z"], *args)
+            raise InvalidFragmentSpecification(
+                f"For scale fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}"
+            )
+        args_dict = _args_to_dict(["x", "y", "z"], *args)
         self.x = float(args_dict.get("x", "1"))
         self.y = float(args_dict.get("y", "1"))
         self.z = float(args_dict.get("z", "1"))
+
 
 @fragment("offset")
 class OffsetFragment(ModifierFragment):
@@ -1434,11 +1641,14 @@ class OffsetFragment(ModifierFragment):
 
     def __init__(self, *args: list[str]):
         if len(args) == 0 or len(args) > 3:
-            raise InvalidFragmentSpecification(f"For offset fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}")
-        args_dict = _args_to_dict(["x","y","z"], *args)
+            raise InvalidFragmentSpecification(
+                f"For offset fragments, must have 1, 2, or 3 arguments. Saw {len(args)} arguments: {args}"
+            )
+        args_dict = _args_to_dict(["x", "y", "z"], *args)
         self.x = float(args_dict.get("x", "0"))
         self.y = float(args_dict.get("y", "0"))
         self.z = float(args_dict.get("z", "0"))
+
 
 @fragment("magnet", examples=["{magnet}"])
 def _fragment_magnet(height: float, _maxsize: float) -> Sketch:

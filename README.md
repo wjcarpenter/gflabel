@@ -115,6 +115,14 @@ gflabel predbox -w 5 "HEX\n{head(hex)} {bolt(5)}{3|}{<}M2\nM3\nM4\nM5{2|2}{<}M6\
 
 ![](https://github.com/ndevenish/gflabel/raw/refs/heads/readme_images/example_hex.png)
 
+This is an example of a Tailor Box label using multiple columns, rows, and symbols.
+
+```
+gflabel tailorbox -w=5 "M3 {|} Bolts Nuts\nWashers\n{hexhead(hex)} {hexhead(torx)} {nut} {washer}"
+```
+
+![](https://github.com/ndevenish/gflabel/raw/refs/heads/readme_images/example_tailor.png)
+
 ## Command Parameters
 
 The full command parameter usage (as generate by `gflabel --help`):
@@ -227,6 +235,7 @@ The base (specified by `--base=TYPE`) defines the shape of what the label is gen
 
 [predlabel]: https://www.printables.com/model/592545-gridfinity-bin-with-printable-label-by-pred-parame
 [predbox]: https://www.printables.com/model/543553-gridfinity-storage-box-by-pred-now-parametric
+[tailorbox]: https://www.printables.com/model/1152814-gridfinity-hardware-storage-system-beta
 [modern]: https://www.printables.com/model/894202-modern-gridfinity-case
 
 ### Label Styles
@@ -275,7 +284,8 @@ A list of all the fragments currently recognised:
 | bolt              | Variable length bolt, in the style of Printables pred-box labels.<br><br>If the requested bolt is longer than the available space, then the<br>bolt will be as large as possible with a broken thread. |
 | box               | Arbitrary width, height centered box. If height is not specified, will expand to row height. |
 | circle            | A filled circle.                                                  |
-| color             | Changes the color to be used for subsequent fragments on a line. See COLOR_AND_SVG_NOTES.md|
+| color             | Changes the color to be used for subsequent fragments on a line. See COLOR_AND_SVG_NOTES.md |
+| cullbolt          | Alternate bolt representation incorporating screw drive, with fixed length, as used by the [Cullenect][cullenect] system. |
 | head              | Screw head with specifiable head-shape.                           |
 | hexhead           | Hexagonal screw head. Will accept drives, but not compulsory.     |
 | hexnut, nut       | Hexagonal outer profile nut with circular cutout.                 |
@@ -284,15 +294,17 @@ A list of all the fragments currently recognised:
 | lockwasher        | Circular washer with a locking cutout.                            |
 | magnet            | Horseshoe shaped magnet symbol.                                   |
 | measure           | Fills as much area as possible with a dimension line, and shows the length. Useful for debugging. |
+| mqr, microqr      | Generate a [Micro QR Code](https://en.wikipedia.org/wiki/QR_code#Micro_QR_code) with data. Same arguments as qr, except does not support the `H` level. |
 | offset            | Apply a placement offset on one or more axes for subsequent fragments on a line.|
-| scale             | Apply a placement offset on one or more axes for subsequent fragments on a line.|
-| svg               | Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_AND_SVG_NOTES.md|
+| qr, qrcode        | Generate a QR from text or URL data. Call as `qr(data[,EC])` where `EC` is the error recovery capacity, and can be `L`(7%), `M`(15%, default), `Q`(25%) or `H`(30%). For best results, ensure the label height is at least 10mm for reliable scanning. |
+| scale             | Apply a placement offset on one or more axes for subsequent fragments on a line. |
+| square_nut        | A square with a center hole.                                      |
+| svg               | Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_AND_SVG_NOTES.md |
 | sym, symbol       | Render an electronic symbol.                                      |
 | threaded_insert   | Representation of a threaded insert.                              |
-| tnut              | T-slot nut.                                                       |
+| tnut              | T-slot nut, rectangular horizontal profile                        |
 | variable_resistor | Electrical symbol of a variable resistor.                         |
 | washer            | Circular washer with a circular hole.                             |
-| cullbolt          | Alternate bolt representation incorporating screw drive, with fixed length, as used by the [Cullenect][cullenect] system. |
 | `\|` (pipe)       | Denotes a column edge, where the label should be split. You can specify relative proportions for the columns, as well as specifying the column alignment. |
 
 A basic set of examples showing the usage of some of these:
@@ -328,8 +340,8 @@ There are two classes of bolt/screw representation:
 [cullenect]: https://makerworld.com/en/models/446624
 
 Both types of bolts will accept a head style, one of `pan`, `socket`, `round`,
-or `countersunk`. Both can be marked as `tapping` to have a pointed tip, and
-both can be pointed backwards by adding the `flipped` feature.
+`countersunk` or `wafer`. Both can be marked as `tapping` to have a pointed
+tip, and both can be pointed backwards by adding the `flipped` feature.
 
 Examples showing some differences between the two bolts:
 

@@ -11,7 +11,7 @@ for example `#008080`.
 
 In addition, there is a label fragment type for changing colors within a label.
 Each line of a label starts with the default label color.
-When a color fragment is seen, 
+When a color fragment is seen,
 all fragments after that will be rendered in the named color
 until another color fragment is seen or the end of the line is reached.
 
@@ -58,7 +58,7 @@ when you try to send the sliced model to the 3D printer.
 
 Here is a very simple example showing a lot of colors:
 ```
-gflabel --vscode pred '{washer} R O Y G B I V {nut}' '{color(chartreuse)}{washer} {color(red)}R {color(orange)}O {color(yellow)}Y {color(green)}G {color(blue)}B {color(indigo)}I {color(violet)}V {color(chartreuse)}{nut}'  
+gflabel --vscode pred '{washer} R O Y G B I V {nut}' '{color(chartreuse)}{washer} {color(red)}R {color(orange)}O {color(yellow)}Y {color(green)}G {color(blue)}B {color(indigo)}I {color(violet)}V {color(chartreuse)}{nut}'
 ```
 <img width="1413" height="777" alt="image" src="https://github.com/user-attachments/assets/ff64cecd-2975-4556-8fab-15b221d9f0d4" />
 
@@ -66,13 +66,13 @@ Nobody is likely to have that many colors when 3D printing labels,
 but there is no enforced limit.
 Here's a slightly more complicated example:
 ```
-gflabel --vscode pred '{<}I used to\nbe an\nadventurer\nlike you,{|}{variable_resistor}{|}{<}but\nthen....' '{<}I used to\nbe an\nadventurer\nlike you,{|}{color(red)}{variable_resistor}{|}{<}but\nthen....'  
+gflabel --vscode pred '{<}I used to\nbe an\nadventurer\nlike you,{|}{variable_resistor}{|}{<}but\nthen....' '{<}I used to\nbe an\nadventurer\nlike you,{|}{color(red)}{variable_resistor}{|}{<}but\nthen....'
 ```
 <img width="1409" height="772" alt="image" src="https://github.com/user-attachments/assets/ab77e4d9-9f52-4ca7-bdd4-1484502e6578" />
 
 This is an example of a divided label:
 ```
-gflabel --vscode pred 'R{|}G{|}B' '{color(red)}R{|}{color(green)}G{|}{color(blue)}B' 
+gflabel --vscode pred 'R{|}G{|}B' '{color(red)}R{|}{color(green)}G{|}{color(blue)}B'
 ```
 <img width="1416" height="778" alt="image" src="https://github.com/user-attachments/assets/00579354-5098-45fe-aaf1-c1029d08b231" />
 
@@ -82,7 +82,7 @@ gflabel --vscode pred 'Danger! {head(triangle)}' '{color(red)}Danger! {color(bla
 ```
 <img width="1409" height="770" alt="image" src="https://github.com/user-attachments/assets/858d326b-3931-4928-bdc2-afd158556d97" />
 
-And another:git push --set-upstream origin SvgFragment
+And another:
 ```
 gflabel  --vscode pred "{head(hex)} {bolt(50)}\nM5x50" "{color(tan)}{head(hex)} {color(red)}{bolt(50)}\n{color(blue)}M5x50"
 ```
@@ -91,12 +91,12 @@ gflabel  --vscode pred "{head(hex)} {bolt(50)}\nM5x50" "{color(tan)}{head(hex)} 
 The color fragment should work properly with all of the other fragment types since there is no nesting.
 Here is one of the `{measure}` examples from the README:
 ```
-gflabel --vscode predbox -w=5 'A\n{measure}{4|}B\n{measure}{1|2}C\n{measure}' 'A\n{color(white)}{measure}{4|}B\n{color(chartreuse)}{measure}{1|2}C\n{color(pink)}{measure}' 
+gflabel --vscode predbox -w=5 'A\n{measure}{4|}B\n{measure}{1|2}C\n{measure}' 'A\n{color(white)}{measure}{4|}B\n{color(chartreuse)}{measure}{1|2}C\n{color(pink)}{measure}'
 ```
 <img width="1715" height="1128" alt="image" src="https://github.com/user-attachments/assets/6d48873a-9402-4920-85f8-a80ffe3fceb4" />
 
 There is one side effect that you might not expect.
-If you change the color inside a text fragment, 
+If you change the color inside a text fragment,
 the spacing is likely to be affected.
 It's because rendering an uninterrupted text fragment is done
 with the assistance of low-level font handling code.
@@ -108,7 +108,7 @@ the `gflabel` code.
 
 Have a close look at the spacing between the tips of these letters:
 ```
-gflabel --vscode pred 'WWW' 'W{color(blue)}W{color(blue)}W' 
+gflabel --vscode pred 'WWW' 'W{color(blue)}W{color(blue)}W'
 ```
 <img width="1409" height="772" alt="image" src="https://github.com/user-attachments/assets/ba0cbf84-4dd1-4b19-8fa9-fb75a21d4be1" />
 
@@ -116,7 +116,7 @@ gflabel --vscode pred 'WWW' 'W{color(blue)}W{color(blue)}W'
 
 SVG files can be produced by `gflabel` (via the `-o` or `--output` options)
 and can also be imported (via the `{svg()}` fragment).
-Treatment of colors is controlled by the `--svf-mono` option, whose argument can be
+Treatment of colors is controlled by the `--svg-mono` option, whose argument can be
 `none` (default), `import`, `export`, or `both`.
 With the default, colors are preserved both for imported SVG files
 and for exported SVG files.
