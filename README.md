@@ -284,7 +284,7 @@ A list of all the fragments currently recognised:
 | bolt              | Variable length bolt, in the style of Printables pred-box labels.<br><br>If the requested bolt is longer than the available space, then the<br>bolt will be as large as possible with a broken thread. |
 | box               | Arbitrary width, height centered box. If height is not specified, will expand to row height. |
 | circle            | A filled circle.                                                  |
-| color             | Changes the color to be used for subsequent fragments on a line. See COLOR_AND_SVG_NOTES.md|
+| color             | Changes the color to be used for subsequent fragments on a line. See COLOR_AND_SVG_NOTES.md |
 | cullbolt          | Alternate bolt representation incorporating screw drive, with fixed length, as used by the [Cullenect][cullenect] system. |
 | head              | Screw head with specifiable head-shape.                           |
 | hexhead           | Hexagonal screw head. Will accept drives, but not compulsory.     |
@@ -297,9 +297,9 @@ A list of all the fragments currently recognised:
 | mqr, microqr      | Generate a [Micro QR Code](https://en.wikipedia.org/wiki/QR_code#Micro_QR_code) with data. Same arguments as qr, except does not support the `H` level. |
 | offset            | Apply a placement offset on one or more axes for subsequent fragments on a line.|
 | qr, qrcode        | Generate a QR from text or URL data. Call as `qr(data[,EC])` where `EC` is the error recovery capacity, and can be `L`(7%), `M`(15%, default), `Q`(25%) or `H`(30%). For best results, ensure the label height is at least 10mm for reliable scanning. |
-| scale             | Apply a placement offset on one or more axes for subsequent fragments on a line.|
+| scale             | Apply a placement offset on one or more axes for subsequent fragments on a line. |
 | square_nut        | A square with a center hole.                                      |
-| svg               | Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_AND_SVG_NOTES.md|
+| svg               | Imports an SVG from a file and renders it as a collection of (colored) Sketches. See COLOR_AND_SVG_NOTES.md |
 | sym, symbol       | Render an electronic symbol.                                      |
 | threaded_insert   | Representation of a threaded insert.                              |
 | tnut              | T-slot nut, rectangular horizontal profile                        |
