@@ -1398,8 +1398,6 @@ class ModifierFragment(Fragment):
 
     visible = False
 
-    # a tiny, tiny circle for a microscopic bounding box, which in any case is invisible
-    # this eliminates some tedious special cases in single line processing
     def render(self, height: float, maxsize: float, options: RenderOptions) -> Compound:
         raise NotImplementedError(f"Modifier fragments should never be rendered: {self.__class__.__name__}")
 
